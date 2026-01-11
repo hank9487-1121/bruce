@@ -1,0 +1,167 @@
+-- 基本設定
+_G.FastAttack = true
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Player = Players.LocalPlayer
+
+local Net = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
+local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
+local RegisterHit = Net:WaitForChild("RE/RegisterHit")
+local EnemiesFolder = workspace:WaitForChild("Enemies")
+local CharactersFolder = workspace:WaitForChild("Characters")
+
+local Settings = {
+    AutoClick = true,
+    Distance = 0,
+    AttackInterval = 0.001,
+    MaxTargets = 20
+}
+
+local function IsAlive(char)
+    local hum = char:FindFirstChild("Humanoid")
+    return hum and hum.Health > 0
+end
+
+-- GUI
+local PlayerGui = Player:WaitForChild("PlayerGui")
+if PlayerGui:FindFirstChild("FastAttackGUI") then
+    PlayerGui.FastAttackGUI:Destroy()
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "FastAttackGUI"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(420, 220)
+frame.Position = UDim2.fromOffset(100, 100)
+frame.BackgroundColor3 = Color3.fromRGB(32,32,32)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0,12)
+frameCorner.Parent = frame
+
+-- 標題
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -60, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "布魯斯最愛的快速攻擊"
+title.TextColor3 = Color3.fromRGB(230,230,230)
+title.TextScaled = true
+title.Parent = frame
+
+-- 關閉按鈕
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.fromOffset(30, 30)
+closeBtn.Position = UDim2.new(1, -30, 0, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+closeBtn.Text = "X"
+closeBtn.TextScaled = true
+closeBtn.Parent = frame
+
+-- 縮小按鈕
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.fromOffset(30,30)
+minimizeBtn.Position = UDim2.new(1, -60, 0, 0)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(100,100,100)
+minimizeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+minimizeBtn.Text = "-"
+minimizeBtn.TextScaled = true
+minimizeBtn.Parent = frame
+
+for _, b in ipairs({closeBtn, minimizeBtn}) do
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0,8)
+    c.Parent = b
+end
+
+local minimizedFrame = nil
+minimizeBtn.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    minimizedFrame = Instance.new("TextButton")
+    minimizedFrame.Size = UDim2.fromOffset(48,48)
+    minimizedFrame.Position = frame.Position
+    minimizedFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+    minimizedFrame.Text = "ez"
+    minimizedFrame.TextColor3 = Color3.fromRGB(255,255,255)
+    minimizedFrame.TextScaled = true
+    minimizedFrame.Parent = gui
+
+    local miniCorner = Instance.new("UICorner")
+    miniCorner.CornerRadius = UDim.new(1,0)
+    miniCorner.Parent = minimizedFrame
+
+    minimizedFrame.MouseButton1Click:Connect(function()
+        frame.Visible = true
+        minimizedFrame:Destroy()
+        minimizedFrame = nil
+    end)
+end)
+
+-- 自動攻擊
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1,-20,0,40)
+toggleBtn.Position = UDim2.new(0,10,0,40)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+toggleBtn.TextScaled = true
+toggleBtn.Text = "自動攻擊: 開"
+toggleBtn.Parent = frame
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0,10)
+toggleCorner.Parent = toggleBtn
+
+toggleBtn.MouseButton1Click:Connect(function()
+    Settings.AutoClick = not Settings.AutoClick
+    toggleBtn.Text = "自動攻擊: "..(Settings.AutoClick and "開" or "關")
+end)
+
+-- 距離
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(0,150,0,25)
+label.Position = UDim2.new(0,10,0,90)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.fromRGB(255,210,90)
+label.TextScaled = true
+label.Text = "攻擊距離: 0 米"
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.Parent = frame
+
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(0,80,0,25)
+inputBox.Position = UDim2.new(0,170,0,90)
+inputBox.BackgroundColor3 = Color3.fromRGB(55,55,55)
+inputBox.TextColor3 = Color3.fromRGB(255,255,255)
+inputBox.TextScaled = true
+inputBox.Text = "0"
+inputBox.Parent = frame
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0,6)
+inputCorner.Parent = inputBox
+
+local slider = Instance.new("Frame")
+slider.Size = UDim2.new(1,-40,0,30)
+slider.Position = UDim2.new(0,10,0,130)
+slider.BackgroundColor3 = Color3.fromRGB(90,90,90)
+slider.BorderSizePixel = 0
+slider.Parent = frame
+
+local fill = Instance.new("Frame")
+fill.Size = UDim2.new(0,0,1,0)
+fill.BackgroundColor3 = Color3.fromRGB(255,190,70)
+fill.Parent = slider
+
+for _, s in ipairs({slider, fill}) do
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(1,0)
+    c.Parent = s
+end
