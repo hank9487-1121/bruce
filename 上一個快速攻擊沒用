@@ -158,7 +158,7 @@ fill.BorderSizePixel = 0
 fill.Parent = slider
 
 local dragging = false
-local MAX_DISTANCE = 1000
+local MAX_DISTANCE = 10000
 
 slider.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
