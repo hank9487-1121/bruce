@@ -139,7 +139,7 @@ maxLabel.Position = UDim2.new(0,260,0,90)
 maxLabel.BackgroundTransparency = 1
 maxLabel.TextColor3 = Color3.fromRGB(200,200,200)
 maxLabel.TextScaled = true
-maxLabel.Text = "(max:1000 米)"
+maxLabel.Text = "(max:9999 米)"
 maxLabel.TextXAlignment = Enum.TextXAlignment.Left
 maxLabel.Parent = frame
 
