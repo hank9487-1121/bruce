@@ -22,7 +22,7 @@ local function IsAlive(char)
     return hum and hum.Health > 0
 end
 
--- GUI
+-- GUI 建立
 local PlayerGui = Player:WaitForChild("PlayerGui")
 if PlayerGui:FindFirstChild("FastAttackGUI") then
     PlayerGui.FastAttackGUI:Destroy()
@@ -41,10 +41,6 @@ frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
-
-local frameCorner = Instance.new("UICorner")
-frameCorner.CornerRadius = UDim.new(0,12)
-frameCorner.Parent = frame
 
 -- 標題
 local title = Instance.new("TextLabel")
