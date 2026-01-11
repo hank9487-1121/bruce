@@ -13,7 +13,7 @@ local CharactersFolder = workspace:WaitForChild("Characters")
 local Settings = {
     AutoClick = true,
     Distance = 0,
-    AttackInterval = 0.01,
+    AttackInterval = 0.001,
     MaxTargets = 20
 }
 
@@ -47,7 +47,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -60, 0, 30)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Xu fast-attack"
+title.Text = "布魯斯最愛的快速攻擊"
 title.TextColor3 = Color3.fromRGB(255,255,255)
 title.TextScaled = true
 title.Parent = frame
@@ -83,7 +83,7 @@ local function minimize()
     minimizedFrame.Position = frame.Position
     minimizedFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)  -- 黑底
     minimizedFrame.BorderSizePixel = 0
-    minimizedFrame.Text = "Xu"
+    minimizedFrame.Text = "ez"
     minimizedFrame.TextColor3 = Color3.fromRGB(255,255,255)   -- 白字
     minimizedFrame.TextScaled = true
     minimizedFrame.Parent = gui
@@ -107,7 +107,7 @@ toggleBtn.Text = "自動攻擊: 開"
 toggleBtn.Parent = frame
 toggleBtn.MouseButton1Click:Connect(function()
     Settings.AutoClick = not Settings.AutoClick
-    toggleBtn.Text = "自動攻擊: "..(Settings.AutoClick and "開" or "關")
+    toggleBtn.Text = "自動攻擊: "..(Settings.AutoClick and "為什麼不開" or "為什麼關")
 end)
 
 -- 攻擊距離標籤
