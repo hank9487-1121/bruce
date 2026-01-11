@@ -28,6 +28,25 @@ if PlayerGui:FindFirstChild("FastAttackGUI") then
     PlayerGui.FastAttackGUI:Destroy()
 end
 
+local function updateToggleUI()
+    if Settings.AutoClick then
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(60,180,90)
+        toggleBtn.Text = "自動攻擊：開啟"
+    else
+        toggleBtn.BackgroundColor3 = Color3.fromRGB(180,60,60)
+        toggleBtn.Text = "自動攻擊：關閉"
+    end
+end
+
+toggleBtn.Font = Enum.Font.GothamBold
+toggleBtn.TextSize = 18
+updateToggleUI()
+
+toggleBtn.MouseButton1Click:Connect(function()
+    Settings.AutoClick = not Settings.AutoClick
+    updateToggleUI()
+end)
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "FastAttackGUI"
 gui.ResetOnSpawn = false
