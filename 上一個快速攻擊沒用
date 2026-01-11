@@ -107,7 +107,7 @@ toggleBtn.Text = "自動攻擊: 開"
 toggleBtn.Parent = frame
 toggleBtn.MouseButton1Click:Connect(function()
     Settings.AutoClick = not Settings.AutoClick
-    toggleBtn.Text = "自動攻擊: "..(Settings.AutoClick and "開" or "為什麼關")
+    toggleBtn.Text = "自動攻擊: "..(Settings.AutoClick and "開啟" or "為什麼關")
 end)
 
 -- 攻擊距離標籤
