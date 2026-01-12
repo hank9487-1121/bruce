@@ -11,9 +11,7 @@ local PLAYER_ESP_ENABLED = true
 local PLAYER_TOGGLE_KEY = Enum.KeyCode.F  -- 按 F 開關玩家 ESP
 
 local NAME_SIZE = 18
-local SELF_NAME_COLOR = Color3.fromRGB(80, 200, 255)
 local ENEMY_NAME_COLOR = Color3.fromRGB(255, 80, 80)
-local SELF_HP_COLOR = Color3.fromRGB(80, 255, 200)
 local ENEMY_HP_COLOR_START = Color3.fromRGB(255, 60, 60)
 local ENEMY_HP_COLOR_END = Color3.fromRGB(0, 255, 80)
 
@@ -67,6 +65,9 @@ end
 
 -- ===== 玩家 ESP 建立函式 =====
 local function createPlayerESP(player)
+	-- 排除自己
+	if player == LocalPlayer then return end
+
 	local gui = Instance.new("BillboardGui")
 	gui.Size = UDim2.new(0, 140, 0, 50)
 	gui.StudsOffset = Vector3.new(0, 3, 0)
@@ -92,7 +93,7 @@ local function createPlayerESP(player)
 
 	local hpBar = Instance.new("Frame")
 	hpBar.Size = UDim2.new(1, 0, 1, 0)
-	hpBar.BackgroundColor3 = SELF_HP_COLOR
+	hpBar.BackgroundColor3 = ENEMY_HP_COLOR_START
 	hpBar.BorderSizePixel = 0
 	hpBar.Parent = hpBack
 	Instance.new("UICorner", hpBar).CornerRadius = UDim.new(0, 6)
@@ -112,16 +113,14 @@ local function createPlayerESP(player)
 			gui.Enabled = true
 
 			local dist = math.floor((myChar.HumanoidRootPart.Position - hrp.Position).Magnitude)
-			local isSelf = (player == LocalPlayer)
 
-			-- 名字顏色
-			nameLabel.TextColor3 = isSelf and SELF_NAME_COLOR or ENEMY_NAME_COLOR
+			-- 名字與血量顏色（敵人）
+			nameLabel.TextColor3 = ENEMY_NAME_COLOR
 			nameLabel.Text = player.Name .. " [" .. dist .. "m]"
 
-			-- 血量條
 			local hpPercent = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
 			hpBar.Size = UDim2.new(hpPercent, 0, 1, 0)
-			hpBar.BackgroundColor3 = isSelf and SELF_HP_COLOR or ENEMY_HP_COLOR_START:Lerp(ENEMY_HP_COLOR_END, hpPercent)
+			hpBar.BackgroundColor3 = ENEMY_HP_COLOR_START:Lerp(ENEMY_HP_COLOR_END, hpPercent)
 		else
 			gui.Enabled = false
 		end
