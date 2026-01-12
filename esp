@@ -34,7 +34,7 @@ local function createESP(player)
 	nameLabel.TextColor3 = NAME_COLOR
 	nameLabel.TextStrokeTransparency = 0
 	nameLabel.Font = Enum.Font.SourceSansBold
-	nameLabel.TextSize = 14
+	nameLabel.TextSize = 18
 	nameLabel.Parent = gui
 
 	-- 血量底條
