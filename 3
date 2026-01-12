@@ -130,7 +130,21 @@ Scripts["玩家 ESP"] = {
 }
 
 -- ====== 快速攻擊 ======
-Scripts["快速攻擊"] = {Enabled=false,Func=function() print("快速攻擊啟用") end}
+Scripts["快速攻擊"] = {
+    Enabled = false,
+    Func = function(self)
+        local success, err = pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/上一個快速攻擊沒用"))()
+        end)
+        if not success then
+            warn("快速攻擊執行失敗:", err)
+        end
+    end,
+    StopFunc = function(self)
+        warn("快速攻擊關閉（無自動關閉功能）")
+    end
+}
+
 
 -- ====== 飛行 GUI ======
 Scripts["飛行 GUI"] = {
