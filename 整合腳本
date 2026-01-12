@@ -164,8 +164,7 @@ for i=1,10 do
     elseif i == 4 then
         btn.Text = "通用"
     else
-end)
-        
+
     btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
     btn.TextColor3 = Color3.fromRGB(255,255,255)
     btn.BorderSizePixel = 0
