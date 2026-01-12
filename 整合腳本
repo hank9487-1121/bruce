@@ -13,10 +13,12 @@ local Scripts = {}
 Scripts["玩家 ESP"] = {
     Enabled = false,
     Func = function(self)
+        -- ====== ESP 設定 ======
         local NAME_SIZE = 18
-        local ENEMY_NAME_COLOR = Color3.fromRGB(255, 80, 80)
-        local ENEMY_HP_COLOR_START = Color3.fromRGB(255, 60, 60)
-        local ENEMY_HP_COLOR_END = Color3.fromRGB(0, 255, 80)
+        local ENEMY_NAME_COLOR = Color3.fromRGB(255, 80, 80) -- 敵人名字
+        local ENEMY_HP_COLOR_START = Color3.fromRGB(255, 60, 60) -- 血條起始
+        local ENEMY_HP_COLOR_END = Color3.fromRGB(0, 255, 80) -- 血條結束
+        local SELF_NAME_COLOR = Color3.fromRGB(80, 180, 255) -- 自己名字
 
         -- ESP 容器
         local EspFolder = Instance.new("Folder")
@@ -59,15 +61,12 @@ Scripts["玩家 ESP"] = {
                     {TextTransparency = 1, TextStrokeTransparency = 1, BackgroundTransparency = 1}
                 )
                 tween:Play()
-                tween.Completed:Once(function()
-                    label.Visible = false
-                end)
+                tween.Completed:Once(function() label.Visible = false end)
             end)
         end
 
-        -- 建立玩家 ESP
+        -- ====== 創建玩家 ESP ======
         local function createPlayerESP(player)
-            if player == Player then return end
             local gui = Instance.new("BillboardGui")
             gui.Size = UDim2.new(0, 140, 0, 50)
             gui.StudsOffset = Vector3.new(0, 3, 0)
@@ -104,19 +103,28 @@ Scripts["玩家 ESP"] = {
                     gui.Enabled = false
                     return
                 end
+
                 local char = player.Character
                 local myChar = Player.Character
                 if char and myChar and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
-                    local hrp = char.HumanoidRootPart
-                    local hum = char.Humanoid
-                    gui.Adornee = hrp
+                    gui.Adornee = char:FindFirstChild("HumanoidRootPart")
                     gui.Enabled = true
-                    local dist = math.floor((myChar.HumanoidRootPart.Position - hrp.Position).Magnitude)
-                    nameLabel.TextColor3 = ENEMY_NAME_COLOR
-                    nameLabel.Text = player.Name .. " [" .. dist .. "m]"
-                    local hpPercent = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
-                    hpBar.Size = UDim2.new(hpPercent, 0, 1, 0)
-                    hpBar.BackgroundColor3 = ENEMY_HP_COLOR_START:Lerp(ENEMY_HP_COLOR_END, hpPercent)
+
+                    local dist = math.floor((myChar.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude)
+
+                    -- 自己 ESP 顏色不同
+                    if player == Player then
+                        nameLabel.TextColor3 = SELF_NAME_COLOR
+                        nameLabel.Text = player.Name .. " [" .. dist .. "m]"
+                        hpBar.BackgroundColor3 = ENEMY_HP_COLOR_END
+                        hpBar.Size = UDim2.new(1,0,1,0)
+                    else
+                        nameLabel.TextColor3 = ENEMY_NAME_COLOR
+                        nameLabel.Text = player.Name .. " [" .. dist .. "m]"
+                        local hpPercent = math.clamp(char.Humanoid.Health / char.Humanoid.MaxHealth, 0, 1)
+                        hpBar.Size = UDim2.new(hpPercent, 0, 1, 0)
+                        hpBar.BackgroundColor3 = ENEMY_HP_COLOR_START:Lerp(ENEMY_HP_COLOR_END, hpPercent)
+                    end
                 else
                     gui.Enabled = false
                 end
@@ -130,6 +138,7 @@ Scripts["玩家 ESP"] = {
             end)
         end
 
+        -- 初始化
         for _, plr in ipairs(Players:GetPlayers()) do
             createPlayerESP(plr)
         end
@@ -158,9 +167,7 @@ Frame.Position = UDim2.new(0.5,-110,0.5,-125)
 Frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 Frame.BorderSizePixel = 0
 Frame.Parent = ScreenGui
-
-local UICorner = Instance.new("UICorner", Frame)
-UICorner.CornerRadius = UDim.new(0, 8)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,8)
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Padding = UDim.new(0,10)
@@ -168,28 +175,20 @@ UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Parent = Frame
 
 -- ====== 拖動邏輯 ======
-local dragging = false
-local dragInput, dragStart, startPos
-
+local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
 Frame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
         startPos = Frame.Position
         input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
         end)
     end
 end)
-
 Frame.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement then
-        dragInput = input
-    end
+    if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
 end)
-
 UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         local delta = input.Position - dragStart
@@ -210,9 +209,7 @@ for name, data in pairs(Scripts) do
     Button.BackgroundColor3 = Color3.fromRGB(100,100,100)
     Button.TextColor3 = Color3.fromRGB(255,255,255)
     Button.Parent = Frame
-
-    local ButtonCorner = Instance.new("UICorner", Button)
-    ButtonCorner.CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", Button).CornerRadius = UDim.new(0,6)
 
     Button.MouseButton1Click:Connect(function()
         data.Enabled = not data.Enabled
