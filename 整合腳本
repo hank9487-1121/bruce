@@ -149,7 +149,7 @@ minimizeBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- ===== 側欄按鈕 (PVP + server + 設定 + status + XXX5~XXX10) =====
+-- ===== 側欄按鈕 (PVP + 設定 + XXX5~XXX10) =====
 local buttons = {}
 for i=1,10 do
     local btn = Instance.new("TextButton")
@@ -162,10 +162,10 @@ for i=1,10 do
     elseif i == 3 then
         btn.Text = "設定"
     elseif i == 4 then
-        btn.Text = "status"
+        btn.Text = "通用"
     else
-        btn.Text = "XXX"..i
-    end
+end)
+        
     btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
     btn.TextColor3 = Color3.fromRGB(255,255,255)
     btn.BorderSizePixel = 0
