@@ -95,3 +95,70 @@ for _, plr in ipairs(Players:GetPlayers()) do
 end
 
 Players.PlayerAdded:Connect(createESP)
+
+-- ===== NPC / 人偶 ESP =====
+local Workspace = game:GetService("Workspace")
+
+local function createNPCEsp(model)
+	if not model:IsA("Model") then return end
+	if model:FindFirstChildOfClass("Humanoid") == nil then return end
+	if model:FindFirstChild("HumanoidRootPart") == nil then return end
+	if Players:GetPlayerFromCharacter(model) then return end -- 排除玩家
+
+	local hum = model:FindFirstChildOfClass("Humanoid")
+	local hrp = model.HumanoidRootPart
+
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.new(0, 140, 0, 50)
+	gui.StudsOffset = Vector3.new(0, 3, 0)
+	gui.AlwaysOnTop = true
+	gui.Adornee = hrp
+	gui.Parent = EspFolder
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.TextStrokeTransparency = 0
+	nameLabel.Font = Enum.Font.SourceSansBold
+	nameLabel.TextSize = 18
+	nameLabel.TextColor3 = Color3.fromRGB(255, 200, 80)
+	nameLabel.Text = model.Name .. " [NPC]"
+	nameLabel.Parent = gui
+
+	local hpBack = Instance.new("Frame")
+	hpBack.Size = UDim2.new(1, 0, 0.18, 0)
+	hpBack.Position = UDim2.new(0, 0, 0.65, 0)
+	hpBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	hpBack.BorderSizePixel = 0
+	hpBack.Parent = gui
+
+	Instance.new("UICorner", hpBack).CornerRadius = UDim.new(0, 6)
+
+	local hpBar = Instance.new("Frame")
+	hpBar.Size = UDim2.new(1, 0, 1, 0)
+	hpBar.BackgroundColor3 = Color3.fromRGB(0, 255, 80)
+	hpBar.BorderSizePixel = 0
+	hpBar.Parent = hpBack
+
+	Instance.new("UICorner", hpBar).CornerRadius = UDim.new(0, 6)
+
+	RunService.RenderStepped:Connect(function()
+		if hum.Health <= 0 then
+			gui.Enabled = false
+			return
+		end
+
+		local percent = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+		hpBar.Size = UDim2.new(percent, 0, 1, 0)
+		hpBar.BackgroundColor3 =
+			Color3.fromRGB(255, 60, 60):Lerp(Color3.fromRGB(0, 255, 80), percent)
+	end)
+end
+
+-- 掃描現有人偶
+for _, obj in ipairs(Workspace:GetDescendants()) do
+	createNPCEsp(obj)
+end
+
+-- 新生成的人偶
+Workspace.DescendantAdded:Connect(createNPCEsp)
