@@ -1,12 +1,28 @@
 -- ===== 服務 =====
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 
--- ===== ESP 狀態提示 UI =====
-local TweenService = game:GetService("TweenService")
+-- ===== 設定 =====
+local PLAYER_ESP_ENABLED = true
+local PLAYER_TOGGLE_KEY = Enum.KeyCode.F  -- 按 F 開關玩家 ESP
 
+local NAME_SIZE = 18
+local SELF_NAME_COLOR = Color3.fromRGB(80, 200, 255)
+local ENEMY_NAME_COLOR = Color3.fromRGB(255, 80, 80)
+local SELF_HP_COLOR = Color3.fromRGB(80, 255, 200)
+local ENEMY_HP_COLOR_START = Color3.fromRGB(255, 60, 60)
+local ENEMY_HP_COLOR_END = Color3.fromRGB(0, 255, 80)
+
+-- ===== ESP 容器 =====
+local EspFolder = Instance.new("Folder")
+EspFolder.Name = "PlayerESP"
+EspFolder.Parent = game.CoreGui
+
+-- ===== 螢幕提示 =====
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ESP_Notify"
 screenGui.ResetOnSpawn = false
@@ -26,31 +42,21 @@ label.TextColor3 = Color3.fromRGB(255, 255, 255)
 label.Text = ""
 label.Visible = false
 label.Parent = screenGui
-
 Instance.new("UICorner", label).CornerRadius = UDim.new(0, 12)
 
 local function showESPNotify(state)
 	label.Visible = true
-	label.Text = state and "ESP : ON" or "ESP : OFF"
-
-	label.TextColor3 = state
-		and Color3.fromRGB(80, 255, 180)
-		or Color3.fromRGB(255, 80, 80)
-
+	label.Text = state and "PLAYER ESP : ON" or "PLAYER ESP : OFF"
+	label.TextColor3 = state and Color3.fromRGB(80, 255, 180) or Color3.fromRGB(255, 80, 80)
 	label.BackgroundTransparency = 0.2
 	label.TextTransparency = 0
 	label.TextStrokeTransparency = 0
 
-	-- 淡出
 	task.delay(1.2, function()
 		local tween = TweenService:Create(
 			label,
 			TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-			{
-				TextTransparency = 1,
-				TextStrokeTransparency = 1,
-				BackgroundTransparency = 1
-			}
+			{TextTransparency = 1, TextStrokeTransparency = 1, BackgroundTransparency = 1}
 		)
 		tween:Play()
 		tween.Completed:Once(function()
@@ -59,22 +65,8 @@ local function showESPNotify(state)
 	end)
 end
 
--- ===== 設定 =====
-local ESP_ENABLED = true
-local NAME_COLOR = Color3.fromRGB(255, 255, 255)
-local HP_GREEN = Color3.fromRGB(0, 255, 80)
-local HP_RED = Color3.fromRGB(255, 60, 60)
-
--- ===== ESP 容器 =====
-local EspFolder = Instance.new("Folder")
-EspFolder.Name = "ESP"
-EspFolder.Parent = game.CoreGui
-
--- ===== 建立 ESP =====
-local function createESP(player)
-	if player == LocalPlayer then return end
-
-	-- Billboard
+-- ===== 玩家 ESP 建立函式 =====
+local function createPlayerESP(player)
 	local gui = Instance.new("BillboardGui")
 	gui.Size = UDim2.new(0, 140, 0, 50)
 	gui.StudsOffset = Vector3.new(0, 3, 0)
@@ -82,40 +74,31 @@ local function createESP(player)
 	gui.Name = player.Name .. "_ESP"
 	gui.Parent = EspFolder
 
-	-- 名字
 	local nameLabel = Instance.new("TextLabel")
 	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
 	nameLabel.BackgroundTransparency = 1
-	nameLabel.TextColor3 = NAME_COLOR
-	nameLabel.TextStrokeTransparency = 0
 	nameLabel.Font = Enum.Font.SourceSansBold
-	nameLabel.TextSize = 18
+	nameLabel.TextSize = NAME_SIZE
+	nameLabel.TextStrokeTransparency = 0
 	nameLabel.Parent = gui
 
-	-- 血量底條
 	local hpBack = Instance.new("Frame")
 	hpBack.Size = UDim2.new(1, 0, 0.18, 0)
 	hpBack.Position = UDim2.new(0, 0, 0.65, 0)
 	hpBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	hpBack.BorderSizePixel = 0
 	hpBack.Parent = gui
+	Instance.new("UICorner", hpBack).CornerRadius = UDim.new(0, 6)
 
-	local corner = Instance.new("UICorner", hpBack)
-	corner.CornerRadius = UDim.new(0, 6)
-
-	-- 血量條
 	local hpBar = Instance.new("Frame")
 	hpBar.Size = UDim2.new(1, 0, 1, 0)
-	hpBar.BackgroundColor3 = HP_GREEN
+	hpBar.BackgroundColor3 = SELF_HP_COLOR
 	hpBar.BorderSizePixel = 0
 	hpBar.Parent = hpBack
+	Instance.new("UICorner", hpBar).CornerRadius = UDim.new(0, 6)
 
-	local corner2 = Instance.new("UICorner", hpBar)
-	corner2.CornerRadius = UDim.new(0, 6)
-
-	-- 更新
 	RunService.RenderStepped:Connect(function()
-		if not ESP_ENABLED then
+		if not PLAYER_ESP_ENABLED then
 			gui.Enabled = false
 			return
 		end
@@ -125,29 +108,38 @@ local function createESP(player)
 		if char and myChar and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
 			local hrp = char.HumanoidRootPart
 			local hum = char.Humanoid
-
 			gui.Adornee = hrp
 			gui.Enabled = true
 
-			local dist = math.floor(
-				(myChar.HumanoidRootPart.Position - hrp.Position).Magnitude
-			)
+			local dist = math.floor((myChar.HumanoidRootPart.Position - hrp.Position).Magnitude)
+			local isSelf = (player == LocalPlayer)
 
+			-- 名字顏色
+			nameLabel.TextColor3 = isSelf and SELF_NAME_COLOR or ENEMY_NAME_COLOR
 			nameLabel.Text = player.Name .. " [" .. dist .. "m]"
 
+			-- 血量條
 			local hpPercent = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
 			hpBar.Size = UDim2.new(hpPercent, 0, 1, 0)
-			hpBar.BackgroundColor3 = HP_RED:Lerp(HP_GREEN, hpPercent)
+			hpBar.BackgroundColor3 = isSelf and SELF_HP_COLOR or ENEMY_HP_COLOR_START:Lerp(ENEMY_HP_COLOR_END, hpPercent)
 		else
 			gui.Enabled = false
 		end
 	end)
 end
 
--- ===== 初始化 =====
+-- ===== 初始化玩家 ESP =====
 for _, plr in ipairs(Players:GetPlayers()) do
-	createESP(plr)
+	createPlayerESP(plr)
 end
 
-Players.PlayerAdded:Connect(createESP)
- 
+Players.PlayerAdded:Connect(createPlayerESP)
+
+-- ===== 玩家 ESP 開關 =====
+UserInputService.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	if input.KeyCode == PLAYER_TOGGLE_KEY then
+		PLAYER_ESP_ENABLED = not PLAYER_ESP_ENABLED
+		showESPNotify(PLAYER_ESP_ENABLED)
+	end
+end)
