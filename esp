@@ -4,6 +4,61 @@ local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 
+-- ===== ESP 狀態提示 UI =====
+local TweenService = game:GetService("TweenService")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ESP_Notify"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = game.CoreGui
+
+local label = Instance.new("TextLabel")
+label.AnchorPoint = Vector2.new(0.5, 0)
+label.Position = UDim2.new(0.5, 0, 0.12, 0)
+label.Size = UDim2.new(0, 240, 0, 42)
+label.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+label.BackgroundTransparency = 0.2
+label.TextTransparency = 1
+label.TextStrokeTransparency = 1
+label.Font = Enum.Font.SourceSansBold
+label.TextSize = 22
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.Text = ""
+label.Visible = false
+label.Parent = screenGui
+
+Instance.new("UICorner", label).CornerRadius = UDim.new(0, 12)
+
+local function showESPNotify(state)
+	label.Visible = true
+	label.Text = state and "ESP : ON" or "ESP : OFF"
+
+	label.TextColor3 = state
+		and Color3.fromRGB(80, 255, 180)
+		or Color3.fromRGB(255, 80, 80)
+
+	label.BackgroundTransparency = 0.2
+	label.TextTransparency = 0
+	label.TextStrokeTransparency = 0
+
+	-- 淡出
+	task.delay(1.2, function()
+		local tween = TweenService:Create(
+			label,
+			TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+			{
+				TextTransparency = 1,
+				TextStrokeTransparency = 1,
+				BackgroundTransparency = 1
+			}
+		)
+		tween:Play()
+		tween.Completed:Once(function()
+			label.Visible = false
+		end)
+	end)
+end
+
 -- ===== 設定 =====
 local ESP_ENABLED = true
 local NAME_COLOR = Color3.fromRGB(255, 255, 255)
@@ -95,70 +150,4 @@ for _, plr in ipairs(Players:GetPlayers()) do
 end
 
 Players.PlayerAdded:Connect(createESP)
-
--- ===== NPC / 人偶 ESP =====
-local Workspace = game:GetService("Workspace")
-
-local function createNPCEsp(model)
-	if not model:IsA("Model") then return end
-	if model:FindFirstChildOfClass("Humanoid") == nil then return end
-	if model:FindFirstChild("HumanoidRootPart") == nil then return end
-	if Players:GetPlayerFromCharacter(model) then return end -- 排除玩家
-
-	local hum = model:FindFirstChildOfClass("Humanoid")
-	local hrp = model.HumanoidRootPart
-
-	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.new(0, 140, 0, 50)
-	gui.StudsOffset = Vector3.new(0, 3, 0)
-	gui.AlwaysOnTop = true
-	gui.Adornee = hrp
-	gui.Parent = EspFolder
-
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.TextStrokeTransparency = 0
-	nameLabel.Font = Enum.Font.SourceSansBold
-	nameLabel.TextSize = 18
-	nameLabel.TextColor3 = Color3.fromRGB(255, 200, 80)
-	nameLabel.Text = model.Name .. " [NPC]"
-	nameLabel.Parent = gui
-
-	local hpBack = Instance.new("Frame")
-	hpBack.Size = UDim2.new(1, 0, 0.18, 0)
-	hpBack.Position = UDim2.new(0, 0, 0.65, 0)
-	hpBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	hpBack.BorderSizePixel = 0
-	hpBack.Parent = gui
-
-	Instance.new("UICorner", hpBack).CornerRadius = UDim.new(0, 6)
-
-	local hpBar = Instance.new("Frame")
-	hpBar.Size = UDim2.new(1, 0, 1, 0)
-	hpBar.BackgroundColor3 = Color3.fromRGB(0, 255, 80)
-	hpBar.BorderSizePixel = 0
-	hpBar.Parent = hpBack
-
-	Instance.new("UICorner", hpBar).CornerRadius = UDim.new(0, 6)
-
-	RunService.RenderStepped:Connect(function()
-		if hum.Health <= 0 then
-			gui.Enabled = false
-			return
-		end
-
-		local percent = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
-		hpBar.Size = UDim2.new(percent, 0, 1, 0)
-		hpBar.BackgroundColor3 =
-			Color3.fromRGB(255, 60, 60):Lerp(Color3.fromRGB(0, 255, 80), percent)
-	end)
-end
-
--- 掃描現有人偶
-for _, obj in ipairs(Workspace:GetDescendants()) do
-	createNPCEsp(obj)
-end
-
--- 新生成的人偶
-Workspace.DescendantAdded:Connect(createNPCEsp)
+ 
