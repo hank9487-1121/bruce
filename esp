@@ -1,14 +1,14 @@
--- ===== 基本服務 =====
+-- ===== 服務 =====
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Camera = workspace.CurrentCamera
 
 local LocalPlayer = Players.LocalPlayer
 
 -- ===== 設定 =====
 local ESP_ENABLED = true
-local TEXT_COLOR = Color3.fromRGB(255, 80, 80)
-local TEXT_SIZE = 14
+local NAME_COLOR = Color3.fromRGB(255, 255, 255)
+local HP_GREEN = Color3.fromRGB(0, 255, 80)
+local HP_RED = Color3.fromRGB(255, 60, 60)
 
 -- ===== ESP 容器 =====
 local EspFolder = Instance.new("Folder")
@@ -19,40 +19,72 @@ EspFolder.Parent = game.CoreGui
 local function createESP(player)
 	if player == LocalPlayer then return end
 
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = player.Name .. "_ESP"
-	billboard.AlwaysOnTop = true
-	billboard.Size = UDim2.new(0, 200, 0, 50)
-	billboard.StudsOffset = Vector3.new(0, 3, 0)
-	billboard.Parent = EspFolder
+	-- Billboard
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.new(0, 140, 0, 50)
+	gui.StudsOffset = Vector3.new(0, 3, 0)
+	gui.AlwaysOnTop = true
+	gui.Name = player.Name .. "_ESP"
+	gui.Parent = EspFolder
 
-	local text = Instance.new("TextLabel")
-	text.BackgroundTransparency = 1
-	text.Size = UDim2.new(1, 0, 1, 0)
-	text.TextColor3 = TEXT_COLOR
-	text.TextStrokeTransparency = 0
-	text.TextSize = TEXT_SIZE
-	text.Font = Enum.Font.SourceSansBold
-	text.Parent = billboard
+	-- 名字
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.TextColor3 = NAME_COLOR
+	nameLabel.TextStrokeTransparency = 0
+	nameLabel.Font = Enum.Font.SourceSansBold
+	nameLabel.TextSize = 14
+	nameLabel.Parent = gui
 
+	-- 血量底條
+	local hpBack = Instance.new("Frame")
+	hpBack.Size = UDim2.new(1, 0, 0.18, 0)
+	hpBack.Position = UDim2.new(0, 0, 0.65, 0)
+	hpBack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	hpBack.BorderSizePixel = 0
+	hpBack.Parent = gui
+
+	local corner = Instance.new("UICorner", hpBack)
+	corner.CornerRadius = UDim.new(0, 6)
+
+	-- 血量條
+	local hpBar = Instance.new("Frame")
+	hpBar.Size = UDim2.new(1, 0, 1, 0)
+	hpBar.BackgroundColor3 = HP_GREEN
+	hpBar.BorderSizePixel = 0
+	hpBar.Parent = hpBack
+
+	local corner2 = Instance.new("UICorner", hpBar)
+	corner2.CornerRadius = UDim.new(0, 6)
+
+	-- 更新
 	RunService.RenderStepped:Connect(function()
 		if not ESP_ENABLED then
-			billboard.Enabled = false
+			gui.Enabled = false
 			return
 		end
 
-		if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-			local hrp = player.Character.HumanoidRootPart
-			billboard.Adornee = hrp
-			billboard.Enabled = true
+		local char = player.Character
+		local myChar = LocalPlayer.Character
+		if char and myChar and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+			local hrp = char.HumanoidRootPart
+			local hum = char.Humanoid
 
-			local distance = math.floor(
-				(LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+			gui.Adornee = hrp
+			gui.Enabled = true
+
+			local dist = math.floor(
+				(myChar.HumanoidRootPart.Position - hrp.Position).Magnitude
 			)
 
-			text.Text = string.format("%s\n[%dm]", player.Name, distance)
+			nameLabel.Text = player.Name .. " [" .. dist .. "m]"
+
+			local hpPercent = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
+			hpBar.Size = UDim2.new(hpPercent, 0, 1, 0)
+			hpBar.BackgroundColor3 = HP_RED:Lerp(HP_GREEN, hpPercent)
 		else
-			billboard.Enabled = false
+			gui.Enabled = false
 		end
 	end)
 end
