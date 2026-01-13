@@ -1,0 +1,58 @@
+local toggleKey = "自动v4"
+local autoV4Task
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- 初始化 ToggleStates
+_G.ToggleStates = _G.ToggleStates or {}
+
+local function getToggleState()
+    return _G.ToggleStates[toggleKey]
+end
+
+local function callAwakeningRemote()
+    local Backpack = LocalPlayer:FindFirstChild("Backpack")
+    if not Backpack then return end
+
+    local Awakening = Backpack:FindFirstChild("Awakening")
+    if not Awakening then return end
+
+    local RemoteFunc = Awakening:FindFirstChild("RemoteFunction")
+    if not RemoteFunc or not RemoteFunc:IsA("RemoteFunction") then return end
+
+    local success, err = pcall(function()
+        RemoteFunc:InvokeServer(true)
+    end)
+    if not success then
+        warn("自动v4调用失败：", err)
+    end
+end
+
+local function startAutoV4()
+    if autoV4Task then return end -- 防止多次 spawn
+
+    autoV4Task = task.spawn(function()
+        while getToggleState() do
+            callAwakeningRemote()
+            task.wait(1) -- 可以根據需要調整呼叫間隔
+        end
+        autoV4Task = nil
+    end)
+end
+
+local function stopAutoV4()
+    if autoV4Task then
+        task.cancel(autoV4Task)
+        autoV4Task = nil
+    end
+end
+
+about:Toggle(toggleKey, "Toggle", false, function(IsEnabled)
+    _G.ToggleStates[toggleKey] = IsEnabled
+
+    if IsEnabled then
+        startAutoV4()
+    else
+        stopAutoV4()
+    end
+end)
