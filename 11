@@ -1,0 +1,163 @@
+-- ===== 基本服務 =====
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+
+-- CombatFramework
+local CombatFramework = require(player.PlayerScripts:WaitForChild("CombatFramework"))
+local CombatController = CombatFramework.CombatController
+
+-- ===== 全局設置 =====
+_G.FastAttack = false
+_G.AttackSpeed = 0.001     -- 初始攻擊速度
+_G.HitboxMagnitude = 80 -- 攻擊距離
+
+-- ===== 功能函式 =====
+local function GetCharacter()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
+local function GetWeapon()
+    local char = GetCharacter()
+    return char:FindFirstChildOfClass("Tool")
+end
+
+local function CanAttack()
+    return CombatController
+        and CombatController.activeController
+        and CombatController.activeController.attacking == false
+end
+
+local function PerformFastAttack()
+    if not _G.FastAttack then return end
+    if not CanAttack() then return end
+
+    local weapon = GetWeapon()
+    if not weapon then return end
+
+    local controller = CombatController.activeController
+    controller.timeToNextAttack = _G.AttackSpeed
+    controller.hitboxMagnitude = _G.HitboxMagnitude
+    controller:attack()
+end
+
+RunService.Heartbeat:Connect(function()
+    pcall(PerformFastAttack)
+end)
+
+-- ===== UI 建立 =====
+local PlayerGui = player:WaitForChild("PlayerGui")
+if PlayerGui:FindFirstChild("FastAttackUI") then
+    PlayerGui.FastAttackUI:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FastAttackUI"
+ScreenGui.Parent = PlayerGui
+
+-- 主框架
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 260, 0, 160)
+Frame.Position = UDim2.new(0, 50, 0, 100)
+Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.BorderSizePixel = 0
+Frame.ClipsDescendants = true
+Frame.Name = "MainFrame"
+Frame.Active = true
+Frame.Draggable = true
+Frame.Parent = ScreenGui
+
+-- 圓角
+local UICornerFrame = Instance.new("UICorner")
+UICornerFrame.CornerRadius = UDim.new(0,12)
+UICornerFrame.Parent = Frame
+
+-- 開關按鈕
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(1, -20, 0, 50)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+ToggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleBtn.Text = "Fast Attack: OFF"
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 18
+ToggleBtn.Parent = Frame
+ToggleBtn.AutoButtonColor = false
+
+-- 按鈕圓角
+local ToggleUICorner = Instance.new("UICorner")
+ToggleUICorner.CornerRadius = UDim.new(0,10)
+ToggleUICorner.Parent = ToggleBtn
+
+-- 按鈕點擊動畫
+ToggleBtn.MouseButton1Click:Connect(function()
+    _G.FastAttack = not _G.FastAttack
+    ToggleBtn.Text = _G.FastAttack and "Fast Attack: ON" or "Fast Attack: OFF"
+    
+    -- 簡單點擊動畫
+    TweenService:Create(ToggleBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(100,100,100)}):Play()
+    delay(0.1, function()
+        TweenService:Create(ToggleBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(70,70,70)}):Play()
+    end)
+end)
+
+-- 攻擊速度標籤
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Size = UDim2.new(1,-20,0,20)
+SpeedLabel.Position = UDim2.new(0,10,0,70)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.TextColor3 = Color3.fromRGB(255,255,255)
+SpeedLabel.Text = "Attack Speed: ".._G.AttackSpeed
+SpeedLabel.Font = Enum.Font.Gotham
+SpeedLabel.TextSize = 14
+SpeedLabel.Parent = Frame
+
+-- 滑桿背景
+local SliderFrame = Instance.new("Frame")
+SliderFrame.Size = UDim2.new(1, -20, 0, 20)
+SliderFrame.Position = UDim2.new(0,10,0,100)
+SliderFrame.BackgroundColor3 = Color3.fromRGB(60,60,60)
+SliderFrame.BorderSizePixel = 0
+SliderFrame.Parent = Frame
+local SliderCorner = Instance.new("UICorner")
+SliderCorner.CornerRadius = UDim.new(0,10)
+SliderCorner.Parent = SliderFrame
+
+-- 滑桿填充 (漸變)
+local SliderFill = Instance.new("Frame")
+SliderFill.Size = UDim2.new(0,0,1,0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(100,200,100)
+SliderFill.BorderSizePixel = 0
+SliderFill.Parent = SliderFrame
+local FillCorner = Instance.new("UICorner")
+FillCorner.CornerRadius = UDim.new(0,10)
+FillCorner.Parent = SliderFill
+
+-- 更新滑桿數值
+local function UpdateSpeedFromSlider(x)
+    local width = SliderFrame.AbsoluteSize.X
+    local ratio = math.clamp(x / width, 0, 1)
+    _G.AttackSpeed = math.floor(ratio * 10000)
+    SliderFill.Size = UDim2.new(ratio,0,1,0)
+    SpeedLabel.Text = "Attack Speed: ".._G.AttackSpeed
+end
+
+-- 拖曳滑桿
+local dragging = false
+SliderFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        UpdateSpeedFromSlider(input.Position.X - SliderFrame.AbsolutePosition.X)
+    end
+end)
+SliderFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+SliderFrame.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        UpdateSpeedFromSlider(input.Position.X - SliderFrame.AbsolutePosition.X)
+    end
+end)
