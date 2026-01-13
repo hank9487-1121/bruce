@@ -161,57 +161,67 @@ Scripts["飛行 GUI"] = {
 }
 
 -- ====== 自動 V3 / V4 ======
-local toggleKey = "自动v4"
-local autoV4Task = nil
+
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
-local function getToggleState(key)
-    if not _G.ToggleStates then _G.ToggleStates = {} end
-    return _G.ToggleStates[key] or false
+local TOGGLE_KEY = "自动V3V4"
+local taskThread
+
+_G.ToggleStates = _G.ToggleStates or {}
+
+local function getToggle()
+    return _G.ToggleStates[TOGGLE_KEY]
 end
 
-local function callAwakeningRemote()
+-- 嘗試呼叫覺醒 Remote
+local function tryAwaken()
     local Backpack = LocalPlayer:FindFirstChild("Backpack")
     if not Backpack then return end
 
-    local Awakening = Backpack:FindFirstChild("Awakening")
-    if not Awakening then return end
+    local tool = Backpack:FindFirstChild("Awakening")
+    if not tool then return end
 
-    local RemoteFunc = Awakening:FindFirstChild("RemoteFunction")
-    if not RemoteFunc or not RemoteFunc:IsA("RemoteFunction") then return end
+    local remote = tool:FindFirstChildWhichIsA("RemoteFunction")
+    if not remote then return end
 
-    local success, err = pcall(function()
-        RemoteFunc:InvokeServer(true)
+    pcall(function()
+        remote:InvokeServer(true)
     end)
-    if not success then
-        warn("自动v4调用失败：", err)
+end
+
+local function startAuto()
+    if taskThread then return end
+
+    taskThread = task.spawn(function()
+        while getToggle() do
+            tryAwaken()
+            task.wait(0.8) -- 間隔別太快，避免被判異常
+        end
+        taskThread = nil
+    end)
+end
+
+local function stopAuto()
+    if taskThread then
+        task.cancel(taskThread)
+        taskThread = nil
     end
 end
 
-local function toggleAutoV4(enable)
-    if autoV4Task then
-        task.cancel(autoV4Task)
-        autoV4Task = nil
+--==============================
+-- UI Toggle
+--==============================
+about:Toggle(TOGGLE_KEY, "Toggle", false, function(state)
+    _G.ToggleStates[TOGGLE_KEY] = state
+    if state then
+        startAuto()
+    else
+        stopAuto()
     end
-
-    if enable then
-        autoV4Task = task.spawn(function()
-            while getToggleState(toggleKey) do
-                callAwakeningRemote()
-                task.wait(1) 
-            end
-            autoV4Task = nil
-        end)
-    end
-end
-
-about:Toggle(toggleKey, "Toggle", false, function(IsEnabled)
-    if not _G.ToggleStates then _G.ToggleStates = {} end
-    _G.ToggleStates[toggleKey] = IsEnabled
-
-    toggleAutoV4(IsEnabled)
 end)
+
 
 -- ====== 可拖動 GUI ======
 local ScreenGui = Instance.new("ScreenGui")
