@@ -1,0 +1,54 @@
+-- ==============================
+--  Blox Fruits Fast Attack
+--  No RegisterAttack / RegisterHit
+-- ==============================
+
+_G.FastAttack = true
+_G.AttackSpeed = 0 -- 越小越快（0 = 幾乎無冷卻）
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+-- CombatFramework
+local CombatFramework = require(player.PlayerScripts:WaitForChild("CombatFramework"))
+local CombatController = CombatFramework.CombatController
+
+-- 取得角色
+local function GetCharacter()
+    return player.Character or player.CharacterAdded:Wait()
+end
+
+-- 取得武器
+local function GetWeapon()
+    local char = GetCharacter()
+    return char:FindFirstChildOfClass("Tool")
+end
+
+-- 判斷是否能攻擊
+local function CanAttack()
+    return CombatController
+        and CombatController.activeController
+        and CombatController.activeController.attacking == false
+end
+
+-- 核心快速攻擊
+local function FastAttack()
+    if not _G.FastAttack then return end
+    if not CanAttack() then return end
+
+    local weapon = GetWeapon()
+    if not weapon then return end
+
+    -- 繞過攻擊冷卻
+    CombatController.activeController.timeToNextAttack = _G.AttackSpeed
+    CombatController.activeController.hitboxMagnitude = 80 -- 攻擊距離（可調）
+
+    -- 模擬揮刀
+    CombatController.activeController:attack()
+end
+
+-- 連續攻擊循環
+RunService.Heartbeat:Connect(function()
+    pcall(FastAttack)
+end)
