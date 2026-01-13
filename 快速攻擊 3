@@ -1,18 +1,21 @@
--- ==============================
---  Blox Fruits Fast Attack
---  No RegisterAttack / RegisterHit
--- ==============================
+-- ===============================
+-- Blox Fruits Fast Attack with UI
+-- ===============================
 
-_G.FastAttack = true
-_G.AttackSpeed = 0 -- 越小越快（0 = 幾乎無冷卻）
-
+-- 基本服務
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 -- CombatFramework
 local CombatFramework = require(player.PlayerScripts:WaitForChild("CombatFramework"))
 local CombatController = CombatFramework.CombatController
+
+-- 全局設置
+_G.FastAttack = false
+_G.AttackSpeed = 0      -- 0 = 幾乎無冷卻
+_G.HitboxMagnitude = 80 -- 攻擊距離
 
 -- 取得角色
 local function GetCharacter()
@@ -32,7 +35,7 @@ local function CanAttack()
         and CombatController.activeController.attacking == false
 end
 
--- 核心快速攻擊
+-- 快速攻擊核心
 local function FastAttack()
     if not _G.FastAttack then return end
     if not CanAttack() then return end
@@ -40,15 +43,90 @@ local function FastAttack()
     local weapon = GetWeapon()
     if not weapon then return end
 
-    -- 繞過攻擊冷卻
-    CombatController.activeController.timeToNextAttack = _G.AttackSpeed
-    CombatController.activeController.hitboxMagnitude = 80 -- 攻擊距離（可調）
-
-    -- 模擬揮刀
-    CombatController.activeController:attack()
+    local controller = CombatController.activeController
+    controller.timeToNextAttack = _G.AttackSpeed
+    controller.hitboxMagnitude = _G.HitboxMagnitude
+    controller:attack()
 end
 
--- 連續攻擊循環
+-- Heartbeat 循環
 RunService.Heartbeat:Connect(function()
     pcall(FastAttack)
 end)
+
+-- =========================
+-- UI 建立
+-- =========================
+local PlayerGui = player:WaitForChild("PlayerGui")
+
+-- 避免重複建立 UI
+if PlayerGui:FindFirstChild("FastAttackUI") then
+    PlayerGui.FastAttackUI:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FastAttackUI"
+ScreenGui.Parent = PlayerGui
+
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0,200,0,120)
+Frame.Position = UDim2.new(0,20,0,100)
+Frame.BackgroundColor3 = Color3.fromRGB(35,35,35)
+Frame.BorderSizePixel = 0
+Frame.BackgroundTransparency = 0.2
+Frame.Parent = ScreenGui
+Frame.AnchorPoint = Vector2.new(0,0)
+Frame.ClipsDescendants = true
+Frame.AutoLocalize = true
+Frame.Name = "Frame"
+Frame.ZIndex = 2
+Frame.Rotation = 0
+
+Frame.AnchorPoint = Vector2.new(0,0)
+Frame.Position = UDim2.new(0,20,0,100)
+Frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+Frame.BorderSizePixel = 0
+Frame.BackgroundTransparency = 0.1
+Frame.ClipsDescendants = true
+Frame.Name = "MainFrame"
+
+-- 按鈕
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Size = UDim2.new(1, -20, 0, 50)
+ToggleBtn.Position = UDim2.new(0,10,0,10)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(50,50,50)
+ToggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleBtn.Text = "Fast Attack: OFF"
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 18
+ToggleBtn.Parent = Frame
+ToggleBtn.AutoButtonColor = true
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    _G.FastAttack = not _G.FastAttack
+    ToggleBtn.Text = _G.FastAttack and "Fast Attack: ON" or "Fast Attack: OFF"
+end)
+
+-- 攻擊速度滑桿
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Size = UDim2.new(1,-20,0,20)
+SpeedLabel.Position = UDim2.new(0,10,0,70)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.TextColor3 = Color3.fromRGB(255,255,255)
+SpeedLabel.Text = "Attack Speed: ".._G.AttackSpeed
+SpeedLabel.Font = Enum.Font.Gotham
+SpeedLabel.TextSize = 14
+SpeedLabel.Parent = Frame
+
+-- 可用滑鼠滾輪調整速度
+local UIS = game:GetService("UserInputService")
+UIS.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseWheel then
+        if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then
+            -- 滾輪加減速度
+            _G.AttackSpeed = math.clamp(_G.AttackSpeed - input.Position.Z*0.01, 0, 0.2)
+            SpeedLabel.Text = "Attack Speed: "..string.format("%.3f", _G.AttackSpeed)
+        end
+    end
+end)
+
