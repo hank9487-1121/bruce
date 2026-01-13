@@ -1,0 +1,187 @@
+-- ====== 基本服務 ======
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+-- ====== 腳本列表 ======
+local Scripts = {}
+
+-- =====================================================
+-- ================== 玩家 ESP（原樣） ==================
+-- =====================================================
+Scripts["玩家 ESP"] = {
+    Enabled = false,
+    Func = function(self)
+        local NAME_SIZE = 18
+        local ENEMY_NAME_COLOR = Color3.fromRGB(255,80,80)
+        local ENEMY_HP_COLOR_START = Color3.fromRGB(255,60,60)
+        local ENEMY_HP_COLOR_END = Color3.fromRGB(0,255,80)
+
+        local EspFolder = Instance.new("Folder", game.CoreGui)
+        EspFolder.Name = "PlayerESP"
+
+        local screenGui = Instance.new("ScreenGui", game.CoreGui)
+        screenGui.Name = "ESP_Notify"
+        screenGui.ResetOnSpawn = false
+
+        local label = Instance.new("TextLabel", screenGui)
+        label.AnchorPoint = Vector2.new(0.5,0)
+        label.Position = UDim2.new(0.5,0,0.12,0)
+        label.Size = UDim2.new(0,260,0,42)
+        label.BackgroundColor3 = Color3.fromRGB(25,25,25)
+        label.BackgroundTransparency = 0.2
+        label.TextTransparency = 1
+        label.TextStrokeTransparency = 1
+        label.Font = Enum.Font.SourceSansBold
+        label.TextSize = 22
+        label.TextColor3 = Color3.fromRGB(255,255,255)
+        label.Visible = false
+        Instance.new("UICorner", label).CornerRadius = UDim.new(0,12)
+
+        local function notify(state)
+            label.Visible = true
+            label.Text = state and "PLAYER ESP : ON" or "PLAYER ESP : OFF"
+            label.TextColor3 = state and Color3.fromRGB(80,255,180) or Color3.fromRGB(255,80,80)
+            label.TextTransparency = 0
+            label.TextStrokeTransparency = 0
+            task.delay(1.2,function()
+                TweenService:Create(label,TweenInfo.new(0.4),
+                    {TextTransparency=1,TextStrokeTransparency=1,BackgroundTransparency=1}
+                ):Play()
+            end)
+        end
+
+        local function createESP(plr)
+            if plr == Player then return end
+            local gui = Instance.new("BillboardGui", EspFolder)
+            gui.Size = UDim2.new(0,140,0,50)
+            gui.StudsOffset = Vector3.new(0,3,0)
+            gui.AlwaysOnTop = true
+
+            local name = Instance.new("TextLabel", gui)
+            name.Size = UDim2.new(1,0,0.5,0)
+            name.BackgroundTransparency = 1
+            name.Font = Enum.Font.SourceSansBold
+            name.TextSize = NAME_SIZE
+            name.TextStrokeTransparency = 0
+            name.TextColor3 = ENEMY_NAME_COLOR
+
+            local hpBack = Instance.new("Frame", gui)
+            hpBack.Size = UDim2.new(1,0,0.18,0)
+            hpBack.Position = UDim2.new(0,0,0.65,0)
+            hpBack.BackgroundColor3 = Color3.fromRGB(40,40,40)
+            hpBack.BorderSizePixel = 0
+            Instance.new("UICorner", hpBack)
+
+            local hpBar = Instance.new("Frame", hpBack)
+            hpBar.Size = UDim2.new(1,0,1,0)
+            hpBar.BorderSizePixel = 0
+            Instance.new("UICorner", hpBar)
+
+            RunService.RenderStepped:Connect(function()
+                if not self.Enabled then gui.Enabled=false return end
+                local c,m = plr.Character, Player.Character
+                if c and m and c:FindFirstChild("HumanoidRootPart") and c:FindFirstChild("Humanoid") then
+                    gui.Adornee = c.HumanoidRootPart
+                    gui.Enabled = true
+                    local d = math.floor((m.HumanoidRootPart.Position - c.HumanoidRootPart.Position).Magnitude)
+                    name.Text = plr.Name.." ["..d.."m]"
+                    local p = math.clamp(c.Humanoid.Health/c.Humanoid.MaxHealth,0,1)
+                    hpBar.Size = UDim2.new(p,0,1,0)
+                    hpBar.BackgroundColor3 = ENEMY_HP_COLOR_START:Lerp(ENEMY_HP_COLOR_END,p)
+                else
+                    gui.Enabled=false
+                end
+            end)
+        end
+
+        for _,p in ipairs(Players:GetPlayers()) do createESP(p) end
+        Players.PlayerAdded:Connect(createESP)
+        notify(true)
+    end,
+    StopFunc = function()
+        if game.CoreGui:FindFirstChild("PlayerESP") then game.CoreGui.PlayerESP:Destroy() end
+        if game.CoreGui:FindFirstChild("ESP_Notify") then game.CoreGui.ESP_Notify:Destroy() end
+    end
+}
+
+-- =====================================================
+-- ============ ✅ 種族 V3 / V4 自動開啟 ===============
+-- =====================================================
+Scripts["種族 V3 / V4"] = {
+    Enabled = false,
+    Func = function(self)
+        local running = true
+
+        local function GetRaceTier()
+            local ok,data = pcall(function()
+                return require(ReplicatedStorage.Modules.PlayerData).RaceTier
+            end)
+            return ok and data or 0
+        end
+
+        local function Press(key)
+            UserInputService.InputBegan:Fire({KeyCode=key,UserInputType=Enum.UserInputType.Keyboard},false)
+            task.wait(0.05)
+            UserInputService.InputEnded:Fire({KeyCode=key,UserInputType=Enum.UserInputType.Keyboard},false)
+        end
+
+        task.spawn(function()
+            while running and self.Enabled do
+                local tier = GetRaceTier()
+                if tier >= 3 then Press(Enum.KeyCode.T) end
+                if tier >= 4 then Press(Enum.KeyCode.Y) end
+                task.wait(1)
+            end
+        end)
+
+        self._stop = function() running = false end
+    end,
+    StopFunc = function(self)
+        if self._stop then self._stop() self._stop=nil end
+    end
+}
+
+-- =====================================================
+-- ================== GUI（原樣） =======================
+-- =====================================================
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name="MultiScriptGUI"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size=UDim2.new(0,250,0,300)
+Frame.Position=UDim2.new(0.5,-125,0.5,-150)
+Frame.BackgroundColor3=Color3.fromRGB(35,35,35)
+Frame.BorderSizePixel=0
+Instance.new("UICorner",Frame).CornerRadius=UDim.new(0,12)
+
+local UIListLayout=Instance.new("UIListLayout",Frame)
+UIListLayout.Padding=UDim.new(0,12)
+
+for name,data in pairs(Scripts) do
+    local btn=Instance.new("TextButton",Frame)
+    btn.Size=UDim2.new(1,-20,0,44)
+    btn.Text=name.." ❌"
+    btn.Font=Enum.Font.GothamBold
+    btn.TextScaled=true
+    btn.BackgroundColor3=Color3.fromRGB(70,70,70)
+    btn.TextColor3=Color3.new(1,1,1)
+    Instance.new("UICorner",btn)
+
+    btn.MouseButton1Click:Connect(function()
+        data.Enabled=not data.Enabled
+        if data.Enabled then
+            btn.Text=name.." ✔️"
+            btn.BackgroundColor3=Color3.fromRGB(0,200,0)
+            data:Func()
+        else
+            btn.Text=name.." ❌"
+            btn.BackgroundColor3=Color3.fromRGB(70,70,70)
+            if data.StopFunc then data:StopFunc() end
+        end
+    end)
+end
