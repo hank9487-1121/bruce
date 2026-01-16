@@ -34,7 +34,7 @@ local function IsAlive(model)
     return hum and hum.Health > 0
 end
 
--- ================= GUI =================
+-- GUI 建立
 local PlayerGui = Player:WaitForChild("PlayerGui")
 if PlayerGui:FindFirstChild("FastAttackGUI") then
     PlayerGui.FastAttackGUI:Destroy()
@@ -46,66 +46,122 @@ gui.ResetOnSpawn = false
 gui.Parent = PlayerGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.fromOffset(420,220)
-frame.Position = UDim2.fromOffset(120,120)
-frame.BackgroundColor3 = Color3.fromRGB(32,32,32)
+frame.Size = UDim2.fromOffset(420, 220)
+frame.Position = UDim2.fromOffset(100, 100)
+frame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
 
+-- 標題
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1,-60,0,30)
+title.Size = UDim2.new(1, -60, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "布魯斯最愛的快速攻擊"
-title.TextColor3 = Color3.fromRGB(230,230,230)
+title.TextColor3 = Color3.fromRGB(255,255,255)
 title.TextScaled = true
 title.Parent = frame
 
+-- 關閉按鈕
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.fromOffset(30,30)
-closeBtn.Position = UDim2.new(1,-30,0,0)
+closeBtn.Size = UDim2.fromOffset(30, 30)
+closeBtn.Position = UDim2.new(1, -30, 0, 0)
 closeBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+closeBtn.TextColor3 = Color3.fromRGB(255,255,255)
 closeBtn.Text = "X"
 closeBtn.TextScaled = true
 closeBtn.Parent = frame
-
 closeBtn.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
 
+-- 縮小按鈕
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.fromOffset(30,30)
+minimizeBtn.Position = UDim2.new(1, -60, 0, 0)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(100,100,100)
+minimizeBtn.TextColor3 = Color3.fromRGB(255,255,255)
+minimizeBtn.Text = "-"
+minimizeBtn.TextScaled = true
+minimizeBtn.Parent = frame
+
+local minimizedFrame = nil
+local function minimize()
+    frame.Visible = false
+    minimizedFrame = Instance.new("TextButton")
+    minimizedFrame.Size = UDim2.fromOffset(50,50)
+    minimizedFrame.Position = frame.Position
+    minimizedFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)  -- 黑底
+    minimizedFrame.BorderSizePixel = 0
+    minimizedFrame.Text = "ez"
+    minimizedFrame.TextColor3 = Color3.fromRGB(255,255,255)   -- 白字
+    minimizedFrame.TextScaled = true
+    minimizedFrame.Parent = gui
+    minimizedFrame.MouseButton1Click:Connect(function()
+        frame.Visible = true
+        minimizedFrame:Destroy()
+        minimizedFrame = nil
+    end)
+end
+
+minimizeBtn.MouseButton1Click:Connect(minimize)
+
+-- 自動攻擊開關
 local toggleBtn = Instance.new("TextButton")
 toggleBtn.Size = UDim2.new(1,-20,0,40)
 toggleBtn.Position = UDim2.new(0,10,0,40)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
 toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
 toggleBtn.TextScaled = true
-toggleBtn.Text = "自動攻擊：開"
+toggleBtn.Text = "自動攻擊: 開"
 toggleBtn.Parent = frame
-
 toggleBtn.MouseButton1Click:Connect(function()
     Settings.AutoClick = not Settings.AutoClick
-    toggleBtn.Text = "自動攻擊：" .. (Settings.AutoClick and "開" or "關")
+    toggleBtn.Text = "自動攻擊: "..(Settings.AutoClick and "開啟" or "關閉")
 end)
 
-local distLabel = Instance.new("TextLabel")
-distLabel.Size = UDim2.new(0,160,0,25)
-distLabel.Position = UDim2.new(0,10,0,95)
-distLabel.BackgroundTransparency = 1
-distLabel.TextColor3 = Color3.fromRGB(255,210,90)
-distLabel.TextScaled = true
-distLabel.TextXAlignment = Left
-distLabel.Text = "攻擊距離：" .. Settings.Distance
-distLabel.Parent = frame
+-- 攻擊距離標籤
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(0,150,0,25)
+label.Position = UDim2.new(0,10,0,90)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.fromRGB(255,255,0)
+label.TextScaled = true
+label.Text = "攻擊距離: "..Settings.Distance.." 米"
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.Parent = frame
 
-local distBox = Instance.new("TextBox")
-distBox.Size = UDim2.new(0,80,0,25)
-distBox.Position = UDim2.new(0,180,0,95)
-distBox.BackgroundColor3 = Color3.fromRGB(55,55,55)
-distBox.TextColor3 = Color3.fromRGB(255,255,255)
-distBox.TextScaled = true
-distBox.Text = tostring(Settings.Distance)
-distBox.Parent = frame
+-- 輸入框
+local inputBox = Instance.new("TextBox")
+inputBox.Size = UDim2.new(0,80,0,25)
+inputBox.Position = UDim2.new(0,170,0,90)
+inputBox.BackgroundColor3 = Color3.fromRGB(70,70,70)
+inputBox.TextColor3 = Color3.fromRGB(255,255,255)
+inputBox.TextScaled = true
+inputBox.ClearTextOnFocus = false
+inputBox.Text = tostring(Settings.Distance)
+inputBox.Parent = frame
+
+-- 最大值提示
+local maxLabel = Instance.new("TextLabel")
+maxLabel.Size = UDim2.new(0,100,0,25)
+maxLabel.Position = UDim2.new(0,260,0,90)
+maxLabel.BackgroundTransparency = 1
+maxLabel.TextColor3 = Color3.fromRGB(200,200,200)
+maxLabel.TextScaled = true
+maxLabel.Text = "(max:9999 米)"
+maxLabel.TextXAlignment = Enum.TextXAlignment.Left
+maxLabel.Parent = frame
+
+-- 滑桿
+local slider = Instance.new("Frame")
+slider.Size = UDim2.new(1,-40,0,30)
+slider.Position = UDim2.new(0,10,0,130)
+slider.BackgroundColor3 = Color3.fromRGB(100,100,100)
+slider.BorderSizePixel = 0
+slider.Parent = frame
 
 distBox.FocusLost:Connect(function()
     local v = tonumber(distBox.Text)
