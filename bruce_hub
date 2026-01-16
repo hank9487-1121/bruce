@@ -8,6 +8,11 @@ local allowedUsers = {
     ["s105006"] = true,
     ["MeiQin_0917"] = true,
     ["YangXiong1023"] = true,
+    ["Yoo_0303"] = true,
+    ["XanYU0322"] = true,
+    ["bruce_dog555"] = true,
+    ["pypy5492"] = true,
+
 }
 
 -- ================= 權限檢查 =================
