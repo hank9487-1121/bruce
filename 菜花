@@ -54,6 +54,6 @@ end
 -- ==========================================================
 
 -- 直接執行你指定的 GitHub 腳本，不顯示任何菜花標籤
-loadstring(game:HttpGet("https://raw.githubusercontent.com/iqiq180jush-cell/josh/refs/heads/main/XUAN"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/布魯專屬腳本"))()
 
 print("✅ [菜花腳本] 靜默驗證通過，主程序已啟動。")
