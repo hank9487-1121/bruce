@@ -5,7 +5,9 @@ local player = Players.LocalPlayer
 -- ================= 授權列表 =================
 local allowedUsers = {
     [7459494764] = true,
-    MeiQin_0917
+    "MeiQin_0917",
+    "YangXiong1023",
+    "kweryuiolm",
 }
 
 -- ================= 權限檢查 =================
