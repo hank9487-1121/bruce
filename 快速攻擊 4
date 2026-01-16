@@ -1,0 +1,166 @@
+-- ================= 基本設定 =================
+_G.FastAttack = true
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Player = Players.LocalPlayer
+
+-- CombatFramework（核心）
+local CombatFramework = require(Player.PlayerScripts:WaitForChild("CombatFramework"))
+local CombatController = CombatFramework.CombatController
+
+local EnemiesFolder = workspace:WaitForChild("Enemies")
+
+-- ================= 設定 =================
+local Settings = {
+    AutoClick = true,
+    Distance = 80,
+    AttackInterval = 0.05,
+    MaxTargets = 50
+}
+
+-- ================= 工具函數 =================
+local function GetCharacter()
+    return Player.Character or Player.CharacterAdded:Wait()
+end
+
+local function GetWeapon()
+    local char = GetCharacter()
+    return char and char:FindFirstChildOfClass("Tool")
+end
+
+local function IsAlive(model)
+    local hum = model:FindFirstChild("Humanoid")
+    return hum and hum.Health > 0
+end
+
+-- ================= GUI =================
+local PlayerGui = Player:WaitForChild("PlayerGui")
+if PlayerGui:FindFirstChild("FastAttackGUI") then
+    PlayerGui.FastAttackGUI:Destroy()
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "FastAttackGUI"
+gui.ResetOnSpawn = false
+gui.Parent = PlayerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(420,220)
+frame.Position = UDim2.fromOffset(120,120)
+frame.BackgroundColor3 = Color3.fromRGB(32,32,32)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,-60,0,30)
+title.BackgroundTransparency = 1
+title.Text = "布魯斯最愛的快速攻擊"
+title.TextColor3 = Color3.fromRGB(230,230,230)
+title.TextScaled = true
+title.Parent = frame
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.fromOffset(30,30)
+closeBtn.Position = UDim2.new(1,-30,0,0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+closeBtn.Text = "X"
+closeBtn.TextScaled = true
+closeBtn.Parent = frame
+
+closeBtn.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(1,-20,0,40)
+toggleBtn.Position = UDim2.new(0,10,0,40)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+toggleBtn.TextColor3 = Color3.fromRGB(255,255,255)
+toggleBtn.TextScaled = true
+toggleBtn.Text = "自動攻擊：開"
+toggleBtn.Parent = frame
+
+toggleBtn.MouseButton1Click:Connect(function()
+    Settings.AutoClick = not Settings.AutoClick
+    toggleBtn.Text = "自動攻擊：" .. (Settings.AutoClick and "開" or "關")
+end)
+
+local distLabel = Instance.new("TextLabel")
+distLabel.Size = UDim2.new(0,160,0,25)
+distLabel.Position = UDim2.new(0,10,0,95)
+distLabel.BackgroundTransparency = 1
+distLabel.TextColor3 = Color3.fromRGB(255,210,90)
+distLabel.TextScaled = true
+distLabel.TextXAlignment = Left
+distLabel.Text = "攻擊距離：" .. Settings.Distance
+distLabel.Parent = frame
+
+local distBox = Instance.new("TextBox")
+distBox.Size = UDim2.new(0,80,0,25)
+distBox.Position = UDim2.new(0,180,0,95)
+distBox.BackgroundColor3 = Color3.fromRGB(55,55,55)
+distBox.TextColor3 = Color3.fromRGB(255,255,255)
+distBox.TextScaled = true
+distBox.Text = tostring(Settings.Distance)
+distBox.Parent = frame
+
+distBox.FocusLost:Connect(function()
+    local v = tonumber(distBox.Text)
+    if v then
+        Settings.Distance = math.clamp(v, 10, 200)
+        distLabel.Text = "攻擊距離：" .. Settings.Distance
+    end
+end)
+
+-- ================= FastAttack 核心（無 Remote） =================
+task.spawn(function()
+    while task.wait(Settings.AttackInterval) do
+        if not _G.FastAttack or not Settings.AutoClick then
+            continue
+        end
+
+        local char = GetCharacter()
+        local weapon = GetWeapon()
+        if not char or not weapon then
+            continue
+        end
+
+        if not CombatController or not CombatController.activeController then
+            continue
+        end
+
+        local ac = CombatController.activeController
+
+        -- 解鎖冷卻 & 距離
+        ac.timeToNextAttack = 0
+        ac.hitboxMagnitude = Settings.Distance
+        ac.increment = 1
+        ac.focusStart = 0
+        ac.focusEnd = 0
+
+        -- 收集敵人
+        local targets = {}
+        for _, enemy in ipairs(EnemiesFolder:GetChildren()) do
+            if IsAlive(enemy) then
+                table.insert(targets, enemy)
+                if #targets >= Settings.MaxTargets then
+                    break
+                end
+            end
+        end
+
+        if #targets == 0 then
+            continue
+        end
+
+        ac.hitTargets = targets
+        ac.currentAttackTrack = ac.anims.basic[1]
+
+        pcall(function()
+            ac:attack()
+        end)
+    end
+end)
