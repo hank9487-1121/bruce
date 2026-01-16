@@ -12,8 +12,7 @@ local allowedUsers = {
 
 -- ================= 權限檢查 =================
 if allowedUsers[player.Name] ~= true then
-    player:Kick("幹，沒白名單開什麼掛
-by 布魯")
+    player:Kick("幹，沒白名單開什麼掛\nby 布魯")
     return
 end
 
