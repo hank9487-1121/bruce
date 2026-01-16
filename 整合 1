@@ -159,6 +159,60 @@ Scripts["飛行 GUI"] = {
     end
 }
 
+ -- ======自动v4 ======
+local toggleKey = "自动v4"
+local autoV4Task = nil
+
+local function getToggleState(key)
+    if not _G.ToggleStates then _G.ToggleStates = {} end
+    return _G.ToggleStates[key] or false
+end
+
+local function callAwakeningRemote()
+    local Backpack = LocalPlayer:FindFirstChild("Backpack")
+    if not Backpack then return end
+    
+    local Awakening = Backpack:FindFirstChild("Awakening")
+    if not Awakening then return end
+    
+    local RemoteFunc = Awakening:FindFirstChild("RemoteFunction")
+    if not RemoteFunc or not RemoteFunc:IsA("RemoteFunction") then return end
+    
+    local success, err = pcall(function()
+        RemoteFunc:InvokeServer(true)
+    end)
+    if not success then
+        warn("自动v4调用失败：", err)
+    end
+end
+
+local function toggleAutoV4(enable)
+    if autoV4Task then
+        task.cancel(autoV4Task)
+        autoV4Task = nil
+    end
+    
+    if enable then
+        autoV4Task = task.spawn(function()
+            while getToggleState(toggleKey) do
+                callAwakeningRemote()
+                task.wait(1) 
+            end
+            autoV4Task = nil
+        end)
+    end
+end
+
+Tabs.GeneralTab:Toggle({
+    Title = "自動v4",
+    Value = false,
+    Callback = function(IsEnabled)
+        if not _G.ToggleStates then _G.ToggleStates = {} end
+        _G.ToggleStates[toggleKey] = IsEnabled
+        
+        toggleAutoV4(IsEnabled)
+    end
+}
 -- ====== 可拖動 GUI ======
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name="MultiScriptGUI"
