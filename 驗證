@@ -1,0 +1,17 @@
+-- ================= Services =================
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- ================= 授權列表 =================
+local allowedUsers = {
+    [7459494764] = true,
+}
+
+-- ================= 權限檢查 =================
+if allowedUsers[player.UserId] ~= true then
+    player:Kick("You have been permanently banned.")
+    return
+end
+
+print("授權通過，開始執行腳本")
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/布魯專屬腳本"))()
