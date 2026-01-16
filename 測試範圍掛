@@ -1,0 +1,109 @@
+-- ====== 基本服務 ======
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Player = Players.LocalPlayer
+
+-- ====== CombatFramework ======
+local CombatFramework = require(Player.PlayerScripts:WaitForChild("CombatFramework"))
+local CombatController = CombatFramework.CombatController
+
+-- ====== 設定 ======
+local Settings = {
+    AttackSpeed = 0.00001,      -- 攻擊間隔 (秒)
+    HitboxRadius = 9999,       -- 攻擊距離
+    AutoAttack = false       -- 初始自動攻擊開關
+}
+
+-- ====== 取得角色與武器 ======
+local function GetCharacter()
+    return Player.Character or Player.CharacterAdded:Wait()
+end
+
+local function GetWeapon()
+    local char = GetCharacter()
+    return char:FindFirstChildOfClass("Tool")
+end
+
+local function IsAlive(char)
+    local hum = char:FindFirstChild("Humanoid")
+    return hum and hum.Health > 0
+end
+
+-- ====== 取得範圍內敵人 ======
+local function GetEnemiesInRange()
+    local enemies = {}
+    local char = GetCharacter()
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return enemies end
+
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    if not enemiesFolder then return enemies end
+
+    for _, enemy in pairs(enemiesFolder:GetChildren()) do
+        if IsAlive(enemy) and enemy:FindFirstChild("HumanoidRootPart") then
+            local distance = (hrp.Position - enemy.HumanoidRootPart.Position).Magnitude
+            if distance <= Settings.HitboxRadius then
+                table.insert(enemies, enemy)
+            end
+        end
+    end
+
+    return enemies
+end
+
+-- ====== 攻擊函式 ======
+local lastAttack = 0
+
+local function AttackEnemies()
+    if not CombatController or not CombatController.activeController then return end
+    local weapon = GetWeapon()
+    if not weapon then return end
+
+    local now = tick()
+    if now - lastAttack < Settings.AttackSpeed then return end
+    lastAttack = now
+
+    local enemies = GetEnemiesInRange()
+    for _, enemy in pairs(enemies) do
+        -- 透過 CombatController 發動攻擊
+        CombatController.activeController:Attack(weapon, enemy)
+    end
+end
+
+-- ====== 自動攻擊循環 ======
+RunService.RenderStepped:Connect(function()
+    if Settings.AutoAttack then
+        AttackEnemies()
+    end
+end)
+
+-- ====== GUI 控制 ======
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "AutoAttackGUI"
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 150, 0, 50)
+ToggleButton.Position = UDim2.new(0, 20, 0, 20)
+ToggleButton.Text = "AutoAttack: OFF"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+ToggleButton.TextColor3 = Color3.new(1,1,1)
+ToggleButton.Parent = ScreenGui
+
+ToggleButton.MouseButton1Click:Connect(function()
+    Settings.AutoAttack = not Settings.AutoAttack
+    ToggleButton.Text = "AutoAttack: " .. (Settings.AutoAttack and "ON" or "OFF")
+end)
+
+-- 可選：快速調整攻擊距離與速度
+local function SetHitboxRadius(radius)
+    Settings.HitboxRadius = radius
+end
+
+local function SetAttackSpeed(speed)
+    Settings.AttackSpeed = speed
+end
+
+-- 範例：設定攻擊距離 100，攻擊間隔 0.02 秒
+-- SetHitboxRadius(100)
+-- SetAttackSpeed(0.02)
