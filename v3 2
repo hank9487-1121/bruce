@@ -1,0 +1,30 @@
+-- ====== 自動按 T ======
+Scripts["自動按 T"] = {
+    Enabled = false,
+    Func = function(self)
+        local VirtualInputManager = game:GetService("VirtualInputManager")
+
+        -- 防止重複執行
+        if self._conn then return end
+
+        self._conn = task.spawn(function()
+            while self.Enabled do
+                -- 按下 T
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
+                task.wait(0.01)
+                -- 放開 T
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
+
+                task.wait(0.1) -- ⭐ 按 T 間隔（可調，0.05~0.15 最穩）
+            end
+        end)
+
+        print("✅ 自動按 T 已開啟")
+    end,
+
+    StopFunc = function(self)
+        self.Enabled = false
+        self._conn = nil
+        print("❌ 自動按 T 已關閉")
+    end
+}
