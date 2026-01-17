@@ -1,0 +1,39 @@
+-- ================= 服務 =================
+local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+
+-- ================= 設定 =================
+local PRESS_KEY = Enum.KeyCode.T   -- 要按的鍵
+local TOGGLE_KEY = Enum.KeyCode.Y  -- 開關鍵（Y，可自行改）
+local INTERVAL = 0.1               -- 按鍵間隔（秒，越小越快）
+
+-- ================= 狀態 =================
+_G.AUTO_T = _G.AUTO_T or false
+
+-- ================= 自動按鍵 =================
+task.spawn(function()
+    while true do
+        task.wait(INTERVAL)
+        if _G.AUTO_T then
+            VirtualInputManager:SendKeyEvent(true, PRESS_KEY, false, game)
+            task.wait(0.01)
+            VirtualInputManager:SendKeyEvent(false, PRESS_KEY, false, game)
+        end
+    end
+end)
+
+-- ================= 開關鍵 =================
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == TOGGLE_KEY then
+        _G.AUTO_T = not _G.AUTO_T
+        if _G.AUTO_T then
+            print("✅ 自動按 T：開啟")
+        else
+            print("❌ 自動按 T：關閉")
+        end
+    end
+end)
+
+print("📌 自動按 T 腳本已載入（按 Y 開 / 關）")
