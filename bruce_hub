@@ -14,6 +14,7 @@ local allowedUsers = {
     ["pypy5492"] = true,
     ["djbvjxvxv213"] = true,
     ["ggierdifferent"] = true,
+
 }
 
 -- ================= 權限檢查 =================
@@ -23,7 +24,4 @@ if allowedUsers[player.Name] ~= true then
 end
 
 print("授權通過，開始執行腳本")
-
--- ================= 永遠最新的載入方式 =================
-local url = "https://raw.githubusercontent.com/hank9487-1121/bruce/main/bruce.lua"
-loadstring(game:HttpGet(url .. "?v=" .. tostring(os.time())))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/bruce"))()
