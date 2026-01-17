@@ -1,1 +1,39 @@
+-- ================= Bruce Universal Loader =================
+-- 永遠不吃快取｜只改 GitHub 腳本即可
 
+if _G.__BRUCE_LOADER__ then return end
+_G.__BRUCE_LOADER__ = true
+
+local HttpService = game:GetService("HttpService")
+
+-- 🔧 你的主腳本位置（只改這行就好）
+local MAIN_URL = "https://raw.githubusercontent.com/hank9487-1121/bruce/main/main.lua"
+
+-- 🔥 破快取參數（時間 + 隨機）
+local cacheBuster =
+    "?v=" .. tostring(os.time()) ..
+    "&r=" .. tostring(math.random(100000,999999))
+
+local function loadMain()
+    local success, result = pcall(function()
+        return game:HttpGet(MAIN_URL .. cacheBuster)
+    end)
+
+    if not success then
+        warn("❌ Loader 下載失敗")
+        warn(result)
+        return
+    end
+
+    local fn, err = loadstring(result)
+    if not fn then
+        warn("❌ 腳本解析失敗")
+        warn(err)
+        return
+    end
+
+    -- 執行主腳本
+    fn()
+end
+
+loadMain()
