@@ -1,0 +1,74 @@
+-- ================= 基本服務 =================
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- ================= 設定 =================
+local TOGGLE_KEY = Enum.KeyCode.V   -- 開關鍵（V，可改成 X / Z / F）
+local AUTO_ENABLE = true            -- 載入自動開
+
+-- ================= 狀態 =================
+_G.V3_ENABLED = _G.V3_ENABLED or false
+_G.V3_LOADED = _G.V3_LOADED or false
+
+-- ================= 角色等待 =================
+local function WaitForCharacter()
+    return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+end
+
+-- ================= V3 功能區 =================
+local function EnableV3()
+    if _G.V3_ENABLED then return end
+    _G.V3_ENABLED = true
+
+    -- 🔥 你的 V3 啟動內容寫在這裡 🔥
+    print("✅ V3 已開啟")
+
+    -- 例如：
+    -- Settings.V3 = true
+    -- StartV3()
+end
+
+local function DisableV3()
+    if not _G.V3_ENABLED then return end
+    _G.V3_ENABLED = false
+
+    -- ❌ 關閉 V3 的內容
+    print("❌ V3 已關閉")
+
+    -- 例如：
+    -- Settings.V3 = false
+    -- StopV3()
+end
+
+-- ================= 快捷鍵切換 =================
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == TOGGLE_KEY then
+        if _G.V3_ENABLED then
+            DisableV3()
+        else
+            EnableV3()
+        end
+    end
+end)
+
+-- ================= 自動啟動 =================
+if not _G.V3_LOADED then
+    _G.V3_LOADED = true
+
+    WaitForCharacter()
+    task.wait(0.2)
+
+    if AUTO_ENABLE then
+        EnableV3()
+    end
+end
+
+-- ================= 重生自動恢復 =================
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.2)
+    if _G.V3_ENABLED then
+        EnableV3()
+    end
+end)
