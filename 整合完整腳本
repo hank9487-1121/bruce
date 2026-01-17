@@ -160,7 +160,7 @@ Scripts["飛行 GUI"] = {
 }
 
 -- ====== 自動按 T ======
-Scripts["自動按 T"] = {
+Scripts["自動v3"] = {
     Enabled = false,
     Func = function(self)
         local VirtualInputManager = game:GetService("VirtualInputManager")
