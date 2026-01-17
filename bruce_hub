@@ -24,4 +24,4 @@ if allowedUsers[player.Name] ~= true then
 end
 
 print("授權通過，開始執行腳本")
-loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/整合完整腳本"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/bruce"))()
