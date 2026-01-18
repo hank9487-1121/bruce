@@ -189,7 +189,18 @@ Scripts["自動v3"] = {
         print("❌ 自動按 T 已關閉")
     end
 }
-
+Scripts["布魯斯最愛的自瞄"] = {
+    Enabled=false,
+    Func=function(self)
+        local success,err=pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/自瞄%203"))() 
+        end)
+        if not success then warn("自瞄執行失敗:",err) end
+    end,
+    StopFunc=function(self)
+        warn("自瞄 無法自動關閉，請手動關閉")
+    end
+}
 -- ====== 可拖動 GUI ======
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name="MultiScriptGUI"
