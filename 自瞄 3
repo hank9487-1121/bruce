@@ -1,0 +1,131 @@
+-- ===============================
+-- 布魯斯最愛的自瞄 (Facing Player, Ignore Obstacles)
+-- ===============================
+
+-- ===== Services =====
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+-- ===== Settings =====
+local Settings = {
+    Enabled = false,
+    ToggleKey = Enum.KeyCode.RightShift,
+    MaxDistance = 500,
+    DotThreshold = 0.97, -- 前方鎖定角度
+}
+
+-- ===== Character Utils =====
+local function GetCharacter(player)
+    return player.Character
+end
+
+local function IsAlive(char)
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    return hum and hum.Health > 0
+end
+
+-- ===== Find Facing Player (Ignore Obstacles) =====
+local function FindFacingEnemy()
+    local camCF = Camera.CFrame
+    local camPos = camCF.Position
+    local camLook = camCF.LookVector
+
+    local bestTarget = nil
+    local bestDot = 0
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local char = plr.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+            if hrp and IsAlive(char) then
+                local dir = hrp.Position - camPos
+                local dist = dir.Magnitude
+
+                if dist <= Settings.MaxDistance then
+                    local dot = camLook:Dot(dir.Unit)
+                    if dot > Settings.DotThreshold and dot > bestDot then
+                        bestDot = dot
+                        bestTarget = plr
+                    end
+                end
+            end
+        end
+    end
+
+    return bestTarget
+end
+
+-- ===== Aim At Target =====
+local function AimAt(target)
+    if not target then return end
+
+    local char = target.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    Camera.CFrame = CFrame.new(
+        Camera.CFrame.Position,
+        hrp.Position
+    )
+end
+
+-- ===== GUI =====
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "布魯斯最愛的自瞄"
+Gui.ResetOnSpawn = false
+Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local Frame = Instance.new("Frame", Gui)
+Frame.Size = UDim2.fromScale(0.15, 0.1) -- 縮小 UI
+Frame.Position = UDim2.fromScale(0.425, 0.45)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.Active = true
+Frame.Draggable = true
+
+local Corner = Instance.new("UICorner", Frame)
+Corner.CornerRadius = UDim.new(0, 12)
+
+local ToggleBtn = Instance.new("TextButton", Frame)
+ToggleBtn.Size = UDim2.fromScale(0.9, 0.6)
+ToggleBtn.Position = UDim2.fromScale(0.05, 0.2)
+ToggleBtn.Text = "自瞄 : OFF"
+ToggleBtn.TextScaled = true
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local BtnCorner = Instance.new("UICorner", ToggleBtn)
+BtnCorner.CornerRadius = UDim.new(0, 8)
+
+-- ===== Toggle Logic =====
+local function UpdateUI()
+    ToggleBtn.Text = "自瞄 : " .. (Settings.Enabled and "ON" or "OFF")
+end
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    Settings.Enabled = not Settings.Enabled
+    UpdateUI()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Settings.ToggleKey then
+        Settings.Enabled = not Settings.Enabled
+        UpdateUI()
+    end
+end)
+
+-- ===== Main Loop =====
+RunService.Heartbeat:Connect(function()
+    if not Settings.Enabled then return end
+
+    local target = FindFacingEnemy()
+    AimAt(target)
+end)
+
+UpdateUI()
