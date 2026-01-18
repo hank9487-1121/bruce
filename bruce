@@ -189,6 +189,8 @@ Scripts["自動v3"] = {
         print("❌ 自動按 T 已關閉")
     end
 }
+
+-- ====== 布魯斯最愛的自瞄 ======
 Scripts["布魯斯最愛的自瞄"] = {
     Enabled=false,
     Func=function(self)
