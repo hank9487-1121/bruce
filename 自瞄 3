@@ -15,7 +15,7 @@ local Camera = Workspace.CurrentCamera
 local Settings = {
     Enabled = false,
     ToggleKey = Enum.KeyCode.RightShift,
-    MaxDistance = 500,
+    MaxDistance = 9999999,
     DotThreshold = 0.97, -- 前方鎖定角度
 }
 
