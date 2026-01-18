@@ -1,39 +1,131 @@
--- ================= Bruce Universal Loader =================
--- 永遠不吃快取｜只改 GitHub 腳本即可
+-- ===============================
+-- Clean Combat Assist (Facing Player, Ignore Obstacles)
+-- ===============================
 
-if _G.__BRUCE_LOADER__ then return end
-_G.__BRUCE_LOADER__ = true
+-- ===== Services =====
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 
-local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
--- 🔧 你的主腳本位置（只改這行就好）
-local MAIN_URL = "https://raw.githubusercontent.com/hank9487-1121/bruce/main/main.lua"
+-- ===== Settings =====
+local Settings = {
+    Enabled = false,
+    ToggleKey = Enum.KeyCode.RightShift,
+    MaxDistance = 500,
+    DotThreshold = 0.97, -- 前方鎖定角度
+}
 
--- 🔥 破快取參數（時間 + 隨機）
-local cacheBuster =
-    "?v=" .. tostring(os.time()) ..
-    "&r=" .. tostring(math.random(100000,999999))
-
-local function loadMain()
-    local success, result = pcall(function()
-        return game:HttpGet(MAIN_URL .. cacheBuster)
-    end)
-
-    if not success then
-        warn("❌ Loader 下載失敗")
-        warn(result)
-        return
-    end
-
-    local fn, err = loadstring(result)
-    if not fn then
-        warn("❌ 腳本解析失敗")
-        warn(err)
-        return
-    end
-
-    -- 執行主腳本
-    fn()
+-- ===== Character Utils =====
+local function GetCharacter(player)
+    return player.Character
 end
 
-loadMain()
+local function IsAlive(char)
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    return hum and hum.Health > 0
+end
+
+-- ===== Find Facing Player (Ignore Obstacles) =====
+local function FindFacingEnemy()
+    local camCF = Camera.CFrame
+    local camPos = camCF.Position
+    local camLook = camCF.LookVector
+
+    local bestTarget = nil
+    local bestDot = 0
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local char = plr.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+
+            if hrp and IsAlive(char) then
+                local dir = hrp.Position - camPos
+                local dist = dir.Magnitude
+
+                if dist <= Settings.MaxDistance then
+                    local dot = camLook:Dot(dir.Unit)
+                    if dot > Settings.DotThreshold and dot > bestDot then
+                        bestDot = dot
+                        bestTarget = plr
+                    end
+                end
+            end
+        end
+    end
+
+    return bestTarget
+end
+
+-- ===== Aim At Target =====
+local function AimAt(target)
+    if not target then return end
+
+    local char = target.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+
+    Camera.CFrame = CFrame.new(
+        Camera.CFrame.Position,
+        hrp.Position
+    )
+end
+
+-- ===== GUI =====
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "布魯斯最愛的自瞄"
+Gui.ResetOnSpawn = false
+Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local Frame = Instance.new("Frame", Gui)
+Frame.Size = UDim2.fromScale(0.2, 0.15)
+Frame.Position = UDim2.fromScale(0.4, 0.4)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.Active = true
+Frame.Draggable = true
+
+local Corner = Instance.new("UICorner", Frame)
+Corner.CornerRadius = UDim.new(0, 12)
+
+local ToggleBtn = Instance.new("TextButton", Frame)
+ToggleBtn.Size = UDim2.fromScale(0.5, 0.4)
+ToggleBtn.Position = UDim2.fromScale(0.05, 0.3)
+ToggleBtn.Text = "Combat Assist : OFF"
+ToggleBtn.TextScaled = true
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local BtnCorner = Instance.new("UICorner", ToggleBtn)
+BtnCorner.CornerRadius = UDim.new(0, 8)
+
+-- ===== Toggle Logic =====
+local function UpdateUI()
+    ToggleBtn.Text = "Combat Assist : " .. (Settings.Enabled and "ON" or "OFF")
+end
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    Settings.Enabled = not Settings.Enabled
+    UpdateUI()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Settings.ToggleKey then
+        Settings.Enabled = not Settings.Enabled
+        UpdateUI()
+    end
+end)
+
+-- ===== Main Loop =====
+RunService.Heartbeat:Connect(function()
+    if not Settings.Enabled then return end
+
+    local target = FindFacingEnemy()
+    AimAt(target)
+end)
+
+UpdateUI()
