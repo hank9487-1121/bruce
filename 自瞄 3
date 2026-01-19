@@ -82,7 +82,7 @@ Gui.ResetOnSpawn = false
 Gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local Frame = Instance.new("Frame", Gui)
-Frame.Size = UDim2.fromScale(0.15, 0.1) -- 縮小 UI
+Frame.Size = UDim2.fromScale(0.1, 0.07) -- 縮小 UI
 Frame.Position = UDim2.fromScale(0.425, 0.45)
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Frame.Active = true
