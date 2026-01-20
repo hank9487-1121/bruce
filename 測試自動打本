@@ -1,110 +1,40 @@
--- ================= 基本設定 =================
-_G.FastAttack = true
+-- ===============================
+-- Auto Buy Flame Raid Chip
+-- ===============================
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Player = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
 
--- Blox Fruits Remote
-local CommF = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
-
--- FastAttack Remote
-local Net = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net")
-local RegisterAttack = Net:WaitForChild("RE/RegisterAttack")
-local RegisterHit = Net:WaitForChild("RE/RegisterHit")
-
-local EnemiesFolder = workspace:WaitForChild("Enemies")
-
--- ================= 設定 =================
+-- ===== 設定 =====
 local Settings = {
-    AutoClick = true,
-    Distance = 9999,
-    AttackInterval = 0.001,
-    MaxTargets = 50,
-
-    -- Raid
-    AutoRaid = true,
-    RaidName = "Flame" -- Flame / Ice / Light / Magma / Buddha / Dough
+    Enabled = false,
+    Delay = 2 -- 檢查間隔
 }
 
--- ================= 工具函式 =================
-local function IsAlive(char)
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    return hum and hum.Health > 0
-end
-
-local function IsInRaid()
-    return workspace:FindFirstChild("Map")
-       and workspace.Map:FindFirstChild("Raid")
-end
-
--- ================= Raid 功能 =================
-local function BuyRaidChip()
-    pcall(function()
-        CommF:InvokeServer("BuyRaid", Settings.RaidName)
-    end)
-end
-
-local function StartRaid()
-    pcall(function()
-        CommF:InvokeServer("StartRaid", Settings.RaidName)
-    end)
-end
-
--- ================= 主循環 =================
+-- ===== 主迴圈 =====
 task.spawn(function()
-    while _G.FastAttack do
+    while task.wait(Settings.Delay) do
+        if not Settings.Enabled then continue end
 
-        -- ===== 自動開 Raid =====
-        if Settings.AutoRaid and not IsInRaid() then
-            BuyRaidChip()
-            task.wait(0.5)
-            StartRaid()
-            task.wait(1.5)
-        end
+        local leaderstats = LocalPlayer:FindFirstChild("leaderstats")
+        local beli = leaderstats and leaderstats:FindFirstChild("Beli")
+        if not beli or beli.Value < 100000 then continue end
 
-        -- ===== Raid 內自動攻擊 =====
-        if Settings.AutoClick and IsInRaid() then
-            local char = Player.Character
-            local root = char and char:FindFirstChild("HumanoidRootPart")
-
-            if root then
-                local targets = {}
-
-                for _, enemy in ipairs(EnemiesFolder:GetChildren()) do
-                    if enemy ~= char and IsAlive(enemy) then
-                        local hrp = enemy:FindFirstChild("HumanoidRootPart")
-                        if hrp then
-                            local dist = (hrp.Position - root.Position).Magnitude
-                            if dist <= Settings.Distance then
-                                table.insert(targets, {enemy, hrp})
-                                if #targets >= Settings.MaxTargets then
-                                    break
-                                end
-                            end
-                        end
-                    end
-                end
-
-                if #targets > 0 then
-                    RegisterAttack:FireServer(0)
-                    RegisterHit:FireServer(targets[1][2], targets)
-                end
-            end
-        end
-
-        task.wait(Settings.AttackInterval)
+        -- 買「火本」副本票（Flame）
+        pcall(function()
+            game:GetService("ReplicatedStorage")
+                .Remotes
+                .CommF_:InvokeServer("BuyChip", "Flame")
+        end)
     end
 end)
 
--- ================= Raid 清完自動下一場 =================
-task.spawn(function()
-    while task.wait(2) do
-        if IsInRaid() and #EnemiesFolder:GetChildren() == 0 then
-            task.wait(2)
-            StartRaid()
-        end
+-- ===== F6 開關 =====
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.F6 then
+        Settings.Enabled = not Settings.Enabled
+        warn("[Flame Raid] Auto Buy:", Settings.Enabled and "ON" or "OFF")
     end
 end)
-
-print("✅ FastAttack + Auto Raid Loaded")
