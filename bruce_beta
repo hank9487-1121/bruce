@@ -203,73 +203,92 @@ Scripts["布魯斯最愛的自瞄"] = {
         warn("自瞄 無法自動關閉，請手動關閉")
     end
 }
--- ====== 可拖動 GUI ======
+-- ====== 整合 ======
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name="MultiScriptGUI"
+ScreenGui.Name = "bruce_hub"
 ScreenGui.Parent = PlayerGui
 
-local Frame = Instance.new("Frame")
-Frame.Size=UDim2.new(0,250,0,300)
-Frame.Position=UDim2.new(0.5,-125,0.5,-150)
-Frame.BackgroundColor3=Color3.fromRGB(35,35,35)
-Frame.BorderSizePixel=0
-Frame.Parent=ScreenGui
-Instance.new("UICorner",Frame).CornerRadius = UDim.new(0,12)
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0,320,0,380)
+Main.Position = UDim2.new(0.5,-160,0.5,-190)
+Main.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Main.BorderSizePixel = 0
+Main.Parent = ScreenGui
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,14)
 
-local UIListLayout=Instance.new("UIListLayout")
-UIListLayout.Padding=UDim.new(0,12)
-UIListLayout.SortOrder=Enum.SortOrder.LayoutOrder
-UIListLayout.Parent=Frame
+-- 標題
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,0,0,48)
+Title.BackgroundTransparency = 1
+Title.Text = "🔥 Bruce Integrated Hub"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 22
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Parent = Main
 
--- ====== 拖動邏輯 ======
-local dragging,dragInput,dragStart,startPos=false,nil,nil,nil
-Frame.InputBegan:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseButton1 then
-        dragging=true
-        dragStart=input.Position
-        startPos=Frame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState==Enum.UserInputState.End then dragging=false end
-        end)
-    end
-end)
-Frame.InputChanged:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseMovement then dragInput=input end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if input==dragInput and dragging then
-        local delta=input.Position-dragStart
-        Frame.Position=UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset+delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset+delta.Y
-        )
-    end
+-- 內容區（可滾動）
+local Content = Instance.new("ScrollingFrame")
+Content.Size = UDim2.new(1,-20,1,-68)
+Content.Position = UDim2.new(0,10,0,58)
+Content.CanvasSize = UDim2.new(0,0,0,0)
+Content.ScrollBarImageTransparency = 0.3
+Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
+Content.Parent = Main
+
+local Layout = Instance.new("UIListLayout")
+Layout.Padding = UDim.new(0,14)
+Layout.Parent = Content
+
+Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	Content.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y + 10)
 end)
 
--- ====== 按鈕生成 ======
-for name,data in pairs(Scripts) do
-    local Button=Instance.new("TextButton")
-    Button.Size=UDim2.new(1,-20,0,44)
-    Button.Text=name.." ❌"
-    Button.BackgroundColor3=Color3.fromRGB(70,70,70)
-    Button.TextColor3=Color3.fromRGB(255,255,255)
-    Button.Font=Enum.Font.GothamBold
-    Button.TextScaled=true
-    Button.Parent=Frame
-    Instance.new("UICorner",Button).CornerRadius=UDim.new(0,10)
+-- ====== 分區生成 ======
+local function CreateSection(titleText)
+	local Section = Instance.new("Frame")
+	Section.Size = UDim2.new(1,0,0,40)
+	Section.BackgroundColor3 = Color3.fromRGB(45,45,45)
+	Section.BorderSizePixel = 0
+	Section.Parent = Content
+	Instance.new("UICorner",Section).CornerRadius = UDim.new(0,10)
 
-    Button.MouseButton1Click:Connect(function()
-        data.Enabled = not data.Enabled
-        if data.Enabled then
-            Button.BackgroundColor3 = Color3.fromRGB(0,200,0)
-            Button.Text = name.." ✔️"
-            data:Func()
-        else
-            Button.BackgroundColor3 = Color3.fromRGB(70,70,70)
-            Button.Text = name.." ❌"
-            if data.StopFunc then data:StopFunc() end
-        end
-    end)
+	local Title = Instance.new("TextLabel")
+	Title.Size = UDim2.new(1,-12,1,0)
+	Title.Position = UDim2.new(0,12,0,0)
+	Title.BackgroundTransparency = 1
+	Title.Text = titleText
+	Title.Font = Enum.Font.GothamBold
+	Title.TextSize = 16
+	Title.TextXAlignment = Left
+	Title.TextColor3 = Color3.fromRGB(200,200,200)
+	Title.Parent = Section
+
+	return Section
+end
+
+-- ====== Toggle 按鈕 ======
+local function CreateToggle(name, data)
+	local Btn = Instance.new("TextButton")
+	Btn.Size = UDim2.new(1,0,0,42)
+	Btn.Text = name.." ❌"
+	Btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+	Btn.TextColor3 = Color3.fromRGB(255,255,255)
+	Btn.Font = Enum.Font.GothamBold
+	Btn.TextSize = 14
+	Btn.Parent = Content
+	Instance.new("UICorner",Btn).CornerRadius = UDim.new(0,10)
+
+	Btn.MouseButton1Click:Connect(function()
+		data.Enabled = not data.Enabled
+		if data.Enabled then
+			Btn.Text = name.." ✔"
+			Btn.BackgroundColor3 = Color3.fromRGB(0,180,120)
+			data:Func()
+		else
+			Btn.Text = name.." ❌"
+			Btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+			if data.StopFunc then data:StopFunc() end
+		end
+	end)
 end
