@@ -1,0 +1,46 @@
+-- ====== Blox Fruits 除霧開關腳本 ======
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+-- 記錄原本的霧氣設定，方便恢復
+local originalFogStart = Lighting.FogStart
+local originalFogEnd = Lighting.FogEnd
+local originalBrightness = Lighting.Brightness
+local originalShadows = Lighting.GlobalShadows
+
+-- 除霧開關
+local FogDisabled = false
+
+-- 切換除霧函數
+local function ToggleFog()
+    if FogDisabled then
+        -- 恢復原本設定
+        Lighting.FogStart = originalFogStart
+        Lighting.FogEnd = originalFogEnd
+        Lighting.Brightness = originalBrightness
+        Lighting.GlobalShadows = originalShadows
+        FogDisabled = false
+        print("除霧關閉")
+    else
+        -- 開啟除霧
+        Lighting.FogStart = 0
+        Lighting.FogEnd = 100000
+        Lighting.Brightness = 2
+        Lighting.GlobalShadows = false
+        FogDisabled = true
+        print("除霧開啟")
+    end
+end
+
+-- 設定快捷鍵 (例如 F 鍵切換)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        ToggleFog()
+    end
+end)
+
+print("按 F 鍵可開關除霧")
