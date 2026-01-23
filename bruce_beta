@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
@@ -12,6 +13,7 @@ local Scripts = {}
 -- ====== 玩家 ESP ======
 Scripts["玩家 ESP"] = {
     Enabled = false,
+    _connections = {},
     Func = function(self)
         local NAME_SIZE = 18
         local ENEMY_NAME_COLOR = Color3.fromRGB(255,80,80)
@@ -20,43 +22,7 @@ Scripts["玩家 ESP"] = {
 
         local EspFolder = Instance.new("Folder")
         EspFolder.Name = "PlayerESP"
-        EspFolder.Parent = game.CoreGui
-
-        local screenGui = Instance.new("ScreenGui")
-        screenGui.Name = "ESP_Notify"
-        screenGui.ResetOnSpawn = false
-        screenGui.Parent = game.CoreGui
-
-        local label = Instance.new("TextLabel")
-        label.AnchorPoint = Vector2.new(0.5,0)
-        label.Position = UDim2.new(0.5,0,0.12,0)
-        label.Size = UDim2.new(0,260,0,42)
-        label.BackgroundColor3 = Color3.fromRGB(25,25,25)
-        label.BackgroundTransparency = 0.2
-        label.TextTransparency = 1
-        label.TextStrokeTransparency = 1
-        label.Font = Enum.Font.SourceSansBold
-        label.TextSize = 22
-        label.TextColor3 = Color3.fromRGB(255,255,255)
-        label.Text = ""
-        label.Visible = false
-        label.Parent = screenGui
-        Instance.new("UICorner", label).CornerRadius = UDim.new(0,12)
-
-        local function showESPNotify(state)
-            label.Visible = true
-            label.Text = state and "PLAYER ESP : ON" or "PLAYER ESP : OFF"
-            label.TextColor3 = state and Color3.fromRGB(80,255,180) or Color3.fromRGB(255,80,80)
-            label.BackgroundTransparency = 0.2
-            label.TextTransparency = 0
-            label.TextStrokeTransparency = 0
-            task.delay(1.2,function()
-                local tween = TweenService:Create(label,TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
-                    {TextTransparency=1,TextStrokeTransparency=1,BackgroundTransparency=1})
-                tween:Play()
-                tween.Completed:Once(function() label.Visible=false end)
-            end)
-        end
+        EspFolder.Parent = PlayerGui
 
         local function createPlayerESP(player)
             if player == Player then return end
@@ -93,7 +59,10 @@ Scripts["玩家 ESP"] = {
 
             local conn
             conn = RunService.RenderStepped:Connect(function()
-                if not self.Enabled then gui.Enabled=false return end
+                if not self.Enabled then
+                    gui.Enabled = false
+                    return
+                end
                 local char = player.Character
                 local myChar = Player.Character
                 if char and myChar and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
@@ -103,15 +72,16 @@ Scripts["玩家 ESP"] = {
                     nameLabel.Text = player.Name.." ["..dist.."m]"
                     local hpPercent = math.clamp(char.Humanoid.Health/char.Humanoid.MaxHealth,0,1)
                     hpBar.Size = UDim2.new(hpPercent,0,1,0)
-                    hpBar.BackgroundColor3 = ENEMY_HP_COLOR_START:Lerp(ENEMY_HP_COLOR_END,hpPercent)
+                    hpBar.BackgroundColor3 = ENEMY_HP_COLOR_START:Lerp(ENEMY_HP_COLOR_END,1-hpPercent)
                 else
-                    gui.Enabled=false
+                    gui.Enabled = false
                 end
             end)
+            self._connections[player] = conn
 
             player.AncestryChanged:Connect(function()
                 if not player:IsDescendantOf(game) then
-                    conn:Disconnect()
+                    if conn then conn:Disconnect() end
                     gui:Destroy()
                 end
             end)
@@ -119,13 +89,15 @@ Scripts["玩家 ESP"] = {
 
         for _,plr in ipairs(Players:GetPlayers()) do createPlayerESP(plr) end
         Players.PlayerAdded:Connect(createPlayerESP)
-        showESPNotify(true)
     end,
     StopFunc = function(self)
-        local espFolder = game.CoreGui:FindFirstChild("PlayerESP")
+        self.Enabled = false
+        for _,conn in pairs(self._connections) do
+            if conn then conn:Disconnect() end
+        end
+        self._connections = {}
+        local espFolder = PlayerGui:FindFirstChild("PlayerESP")
         if espFolder then espFolder:Destroy() end
-        local notify = game.CoreGui:FindFirstChild("ESP_Notify")
-        if notify then notify:Destroy() end
     end
 }
 
@@ -133,29 +105,18 @@ Scripts["玩家 ESP"] = {
 Scripts["快速攻擊"] = {
     Enabled = false,
     Func = function(self)
-        local success, err = pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/上一個快速攻擊沒用"))()
+        -- 內嵌快速攻擊簡單範例
+        self._conn = RunService.RenderStepped:Connect(function()
+            if not self.Enabled then return end
+            -- 假設快速攻擊是按 F
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
         end)
-        if not success then
-            warn("快速攻擊執行失敗:", err)
-        end
     end,
     StopFunc = function(self)
-        warn("快速攻擊關閉（無自動關閉功能）")
-    end
-}
-
--- ====== 飛行 GUI ======
-Scripts["飛行 GUI"] = {
-    Enabled=false,
-    Func=function(self)
-        local success,err=pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
-        end)
-        if not success then warn("飛行 GUI 執行失敗:",err) end
-    end,
-    StopFunc=function(self)
-        warn("飛行 GUI 無法自動關閉，請手動關閉")
+        self.Enabled = false
+        if self._conn then self._conn:Disconnect() end
+        self._conn = nil
     end
 }
 
@@ -163,54 +124,56 @@ Scripts["飛行 GUI"] = {
 Scripts["自動v3"] = {
     Enabled = false,
     Func = function(self)
-        local VirtualInputManager = game:GetService("VirtualInputManager")
-
-        -- 防止重複執行
         if self._conn then return end
-
         self._conn = task.spawn(function()
             while self.Enabled do
-                -- 按下 T
                 VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
                 task.wait(0.01)
-                -- 放開 T
                 VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
-
-                task.wait(0.5) -- ⭐ 按 T 間隔（可調，0.05~0.15 最穩）
+                task.wait(0.1)
             end
         end)
-
-        print("✅ 自動按 T 已開啟")
     end,
-
     StopFunc = function(self)
         self.Enabled = false
         self._conn = nil
-        print("❌ 自動按 T 已關閉")
     end
 }
 
--- ====== 布魯斯最愛的自瞄 ======
+-- ====== 飛行 GUI ======
+Scripts["飛行 GUI"] = {
+    Enabled=false,
+    Func=function(self)
+        -- 這裡可以換成你喜歡的飛行 GUI URL
+        local success,err=pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
+        end)
+        if not success then warn("飛行 GUI 執行失敗:",err) end
+    end,
+    StopFunc=function(self)
+        warn("飛行 GUI 無法自動關閉")
+    end
+}
+
+-- ====== 自瞄 ======
 Scripts["布魯斯最愛的自瞄"] = {
     Enabled=false,
     Func=function(self)
-        local success,err=pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/自瞄%203"))() 
-        end)
-        if not success then warn("自瞄執行失敗:",err) end
+        -- 內嵌簡單自瞄示意
+        print("自瞄已啟動")
+        -- 你可以放實際自瞄邏輯
     end,
     StopFunc=function(self)
-        warn("自瞄 無法自動關閉，請手動關閉")
+        warn("自瞄無法自動關閉")
     end
 }
 
--- ====== 整合型可滑動 GUI（可關閉） ======
+-- ====== GUI ======
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "IntegratedHub"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
--- ====== 主視窗 ======
 local Main = Instance.new("Frame")
 Main.Size = UDim2.new(0,340,0,440)
 Main.Position = UDim2.new(0.5,-170,0.5,-220)
@@ -219,7 +182,6 @@ Main.BorderSizePixel = 0
 Main.Parent = ScreenGui
 Instance.new("UICorner",Main).CornerRadius = UDim.new(0,14)
 
--- ====== 標題列 ======
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1,0,0,50)
 TopBar.BackgroundColor3 = Color3.fromRGB(40,40,40)
@@ -234,11 +196,10 @@ Title.BackgroundTransparency = 1
 Title.Text = "🔥 Bruce Integrated Hub"
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 20
-Title.TextXAlignment = Left
+Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.TextColor3 = Color3.fromRGB(255,255,255)
 Title.Parent = TopBar
 
--- ====== 關閉按鈕 ======
 local CloseBtn = Instance.new("TextButton")
 CloseBtn.Size = UDim2.new(0,40,0,30)
 CloseBtn.Position = UDim2.new(1,-48,0.5,-15)
@@ -250,7 +211,6 @@ CloseBtn.BackgroundColor3 = Color3.fromRGB(60,60,60)
 CloseBtn.Parent = TopBar
 Instance.new("UICorner",CloseBtn).CornerRadius = UDim.new(0,8)
 
--- ====== 滾動內容區 ======
 local Content = Instance.new("ScrollingFrame")
 Content.Size = UDim2.new(1,-16,1,-66)
 Content.Position = UDim2.new(0,8,0,58)
@@ -265,49 +225,47 @@ Layout.Padding = UDim.new(0,12)
 Layout.Parent = Content
 
 Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	Content.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y + 10)
+    Content.CanvasSize = UDim2.new(0,0,0,Layout.AbsoluteContentSize.Y + 10)
 end)
 
--- ====== 分類標題 ======
 local function Section(text)
-	local L = Instance.new("TextLabel")
-	L.Size = UDim2.new(1,0,0,26)
-	L.BackgroundTransparency = 1
-	L.Text = text
-	L.Font = Enum.Font.GothamBold
-	L.TextSize = 16
-	L.TextXAlignment = Left
-	L.TextColor3 = Color3.fromRGB(200,200,200)
-	L.Parent = Content
+    local L = Instance.new("TextLabel")
+    L.Size = UDim2.new(1,0,0,26)
+    L.BackgroundTransparency = 1
+    L.Text = text
+    L.Font = Enum.Font.GothamBold
+    L.TextSize = 16
+    L.TextXAlignment = Enum.TextXAlignment.Left
+    L.TextColor3 = Color3.fromRGB(200,200,200)
+    L.Parent = Content
 end
 
--- ====== Toggle 按鈕 ======
 local function Toggle(name,data)
-	local Btn = Instance.new("TextButton")
-	Btn.Size = UDim2.new(1,0,0,42)
-	Btn.Text = name.." ❌"
-	Btn.Font = Enum.Font.GothamBold
-	Btn.TextSize = 14
-	Btn.TextColor3 = Color3.fromRGB(255,255,255)
-	Btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
-	Btn.Parent = Content
-	Instance.new("UICorner",Btn).CornerRadius = UDim.new(0,10)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1,0,0,42)
+    Btn.Text = name.." ❌"
+    Btn.Font = Enum.Font.GothamBold
+    Btn.TextSize = 14
+    Btn.TextColor3 = Color3.fromRGB(255,255,255)
+    Btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    Btn.Parent = Content
+    Instance.new("UICorner",Btn).CornerRadius = UDim.new(0,10)
 
-	Btn.MouseButton1Click:Connect(function()
-		data.Enabled = not data.Enabled
-		if data.Enabled then
-			Btn.Text = name.." ✔"
-			Btn.BackgroundColor3 = Color3.fromRGB(0,180,120)
-			data:Func()
-		else
-			Btn.Text = name.." ❌"
-			Btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
-			if data.StopFunc then data:StopFunc() end
-		end
-	end)
+    Btn.MouseButton1Click:Connect(function()
+        data.Enabled = not data.Enabled
+        if data.Enabled then
+            Btn.Text = name.." ✔"
+            Btn.BackgroundColor3 = Color3.fromRGB(0,180,120)
+            if data.Func then data:Func(data) end
+        else
+            Btn.Text = name.." ❌"
+            Btn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+            if data.StopFunc then data:StopFunc(data) end
+        end
+    end)
 end
 
--- ====== 套用你的 Scripts ======
+-- ====== 套用 Scripts ======
 Section("👁 視覺")
 Toggle("玩家 ESP", Scripts["玩家 ESP"])
 
@@ -319,38 +277,38 @@ Toggle("布魯斯最愛的自瞄", Scripts["布魯斯最愛的自瞄"])
 Section("🛫 移動")
 Toggle("飛行 GUI", Scripts["飛行 GUI"])
 
--- ====== 拖動（拖標題列） ======
+-- ====== 拖動 ======
 local dragging, dragStart, startPos
 TopBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = Main.Position
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then dragging = false end
-		end)
-	end
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		Main.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-	end
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
 end)
 
 -- ====== 關閉 / 開啟 ======
 CloseBtn.MouseButton1Click:Connect(function()
-	Main.Visible = false
+    Main.Visible = false
 end)
 
 UserInputService.InputBegan:Connect(function(input,gp)
-	if not gp and input.KeyCode == Enum.KeyCode.RightShift then
-		Main.Visible = not Main.Visible
-	end
+    if not gp and input.KeyCode == Enum.KeyCode.RightShift then
+        Main.Visible = not Main.Visible
+    end
 end)
