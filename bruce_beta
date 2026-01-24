@@ -6,122 +6,8 @@ local UserInputService = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
--- ====== 可拖動 GUI ======
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name="MultiScriptGUI"
-ScreenGui.Parent = PlayerGui
-
-local Frame = Instance.new("Frame")
-Frame.Size=UDim2.new(0,300,0,400)
-Frame.Position=UDim2.new(0.5,-150,0.5,-200)
-Frame.BackgroundColor3=Color3.fromRGB(35,35,35)
-Frame.BorderSizePixel=0
-Frame.Parent=ScreenGui
-Instance.new("UICorner",Frame).CornerRadius = UDim.new(0,12)
-
-local UIListLayout=Instance.new("UIListLayout")
-UIListLayout.Padding=UDim.new(0,8)
-UIListLayout.SortOrder=Enum.SortOrder.LayoutOrder
-UIListLayout.Parent=Frame
-
--- ====== 拖動邏輯 ======
-local dragging,dragInput,dragStart,startPos=false,nil,nil,nil
-Frame.InputBegan:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseButton1 then
-        dragging=true
-        dragStart=input.Position
-        startPos=Frame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState==Enum.UserInputState.End then dragging=false end
-        end)
-    end
-end)
-Frame.InputChanged:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseMovement then dragInput=input end
-end)
-UserInputService.InputChanged:Connect(function(input)
-    if input==dragInput and dragging then
-        local delta=input.Position-dragStart
-        Frame.Position=UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset+delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset+delta.Y
-        )
-    end
-end)
-
--- ====== 按鈕生成 + 選項面板 ======
-for name,data in pairs(Scripts) do
-    -- 主按鈕
-    local Button=Instance.new("TextButton")
-    Button.Size=UDim2.new(1,-20,0,44)
-    Button.Text=name.." ❌"
-    Button.BackgroundColor3=Color3.fromRGB(70,70,70)
-    Button.TextColor3=Color3.fromRGB(255,255,255)
-    Button.Font=Enum.Font.GothamBold
-    Button.TextScaled=true
-    Button.Parent=Frame
-    Instance.new("UICorner",Button).CornerRadius=UDim.new(0,10)
-
-    -- 子選項面板
-    local OptionFrame=Instance.new("Frame")
-    OptionFrame.Size=UDim2.new(1,-20,0,60)
-    OptionFrame.BackgroundColor3=Color3.fromRGB(50,50,50)
-    OptionFrame.Visible=false
-    OptionFrame.Parent=Frame
-    Instance.new("UICorner",OptionFrame).CornerRadius=UDim.new(0,10)
-
-    -- 範例選項（自動按 T 間隔）
-    if name=="自動v3" then
-        local Label=Instance.new("TextLabel")
-        Label.Size=UDim2.new(1,0,0,20)
-        Label.Position=UDim2.new(0,0,0,5)
-        Label.BackgroundTransparency=1
-        Label.Text="間隔(秒)"
-        Label.TextColor3=Color3.fromRGB(255,255,255)
-        Label.Font=Enum.Font.SourceSansBold
-        Label.TextScaled=true
-        Label.Parent=OptionFrame
-
-        local TextBox=Instance.new("TextBox")
-        TextBox.Size=UDim2.new(1,-10,0,24)
-        TextBox.Position=UDim2.new(0,5,0,25)
-        TextBox.BackgroundColor3=Color3.fromRGB(70,70,70)
-        TextBox.TextColor3=Color3.fromRGB(255,255,255)
-        TextBox.Text=tostring(data.Options and data.Options.Interval or 0.5)
-        TextBox.Font=Enum.Font.SourceSansBold
-        TextBox.TextScaled=true
-        TextBox.ClearTextOnFocus=false
-        TextBox.Parent=OptionFrame
-
-        TextBox.FocusLost:Connect(function()
-            local num=tonumber(TextBox.Text)
-            if num and num>0 then
-                if not data.Options then data.Options={} end
-                data.Options.Interval=num
-            else
-                TextBox.Text=tostring(data.Options.Interval or 0.5)
-            end
-        end)
-    end
-
-    -- 點擊主按鈕
-    Button.MouseButton1Click:Connect(function()
-        data.Enabled = not data.Enabled
-        if data.Enabled then
-            Button.BackgroundColor3 = Color3.fromRGB(0,200,0)
-            Button.Text = name.." ✔️"
-            if data.Func then data:Func() end
-            OptionFrame.Visible=true
-        else
-            Button.BackgroundColor3 = Color3.fromRGB(70,70,70)
-            Button.Text = name.." ❌"
-            if data.StopFunc then data:StopFunc() end
-            OptionFrame.Visible=false
-        end
-    end)
-end
+-- ====== 腳本列表 ======
+local Scripts = {}
 
 -- ====== 玩家 ESP ======
 Scripts["玩家 ESP"] = {
@@ -317,3 +203,88 @@ Scripts["布魯斯最愛的自瞄"] = {
         warn("自瞄 無法自動關閉，請手動關閉")
     end
 }
+-- ====== 皮腳本 ======
+Scripts["皮腳本"] = {
+    Enabled = false,
+    Func = function(self)
+        local success, err = pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"))()
+        end)
+        if not success then
+            warn("皮腳本執行失敗:", err)
+        end
+    end,
+    StopFunc = function(self)
+        warn("皮腳本關閉（無自動關閉功能）")
+    end
+}
+-- ====== 可拖動 GUI ======
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name="MultiScriptGUI"
+ScreenGui.Parent = PlayerGui
+
+local Frame = Instance.new("Frame")
+Frame.Size=UDim2.new(0,250,0,300)
+Frame.Position=UDim2.new(0.5,-125,0.5,-150)
+Frame.BackgroundColor3=Color3.fromRGB(35,35,35)
+Frame.BorderSizePixel=0
+Frame.Parent=ScreenGui
+Instance.new("UICorner",Frame).CornerRadius = UDim.new(0,12)
+
+local UIListLayout=Instance.new("UIListLayout")
+UIListLayout.Padding=UDim.new(0,12)
+UIListLayout.SortOrder=Enum.SortOrder.LayoutOrder
+UIListLayout.Parent=Frame
+
+-- ====== 拖動邏輯 ======
+local dragging,dragInput,dragStart,startPos=false,nil,nil,nil
+Frame.InputBegan:Connect(function(input)
+    if input.UserInputType==Enum.UserInputType.MouseButton1 then
+        dragging=true
+        dragStart=input.Position
+        startPos=Frame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState==Enum.UserInputState.End then dragging=false end
+        end)
+    end
+end)
+Frame.InputChanged:Connect(function(input)
+    if input.UserInputType==Enum.UserInputType.MouseMovement then dragInput=input end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input==dragInput and dragging then
+        local delta=input.Position-dragStart
+        Frame.Position=UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset+delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset+delta.Y
+        )
+    end
+end)
+
+-- ====== 按鈕生成 ======
+for name,data in pairs(Scripts) do
+    local Button=Instance.new("TextButton")
+    Button.Size=UDim2.new(1,-20,0,44)
+    Button.Text=name.." ❌"
+    Button.BackgroundColor3=Color3.fromRGB(70,70,70)
+    Button.TextColor3=Color3.fromRGB(255,255,255)
+    Button.Font=Enum.Font.GothamBold
+    Button.TextScaled=true
+    Button.Parent=Frame
+    Instance.new("UICorner",Button).CornerRadius=UDim.new(0,10)
+
+    Button.MouseButton1Click:Connect(function()
+        data.Enabled = not data.Enabled
+        if data.Enabled then
+            Button.BackgroundColor3 = Color3.fromRGB(0,200,0)
+            Button.Text = name.." ✔️"
+            data:Func()
+        else
+            Button.BackgroundColor3 = Color3.fromRGB(70,70,70)
+            Button.Text = name.." ❌"
+            if data.StopFunc then data:StopFunc() end
+        end
+    end)
+end
