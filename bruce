@@ -3,11 +3,26 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
 -- ====== 腳本列表 ======
 local Scripts = {}
+
+-- ====== 皮腳本 ======
+Scripts["皮腳本"] = {
+    Enabled = false,
+    Func = function(self)
+        local success, err = pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"))()
+        end)
+        if not success then warn("皮腳本執行失敗:", err) end
+    end,
+    StopFunc = function(self)
+        warn("皮腳本關閉（無自動關閉功能）")
+    end
+}
 
 -- ====== 玩家 ESP ======
 Scripts["玩家 ESP"] = {
@@ -129,6 +144,29 @@ Scripts["玩家 ESP"] = {
     end
 }
 
+-- ====== 自動按 T ======
+Scripts["自動v3"] = {
+    Enabled = false,
+    Func = function(self)
+        local VirtualInputManager = game:GetService("VirtualInputManager")
+        if self._conn then return end
+        self._conn = task.spawn(function()
+            while self.Enabled do
+                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
+                task.wait(0.01)
+                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
+                task.wait(0.5)
+            end
+        end)
+        print("✅ 自動按 T 已開啟")
+    end,
+    StopFunc = function(self)
+        self.Enabled = false
+        self._conn = nil
+        print("❌ 自動按 T 已關閉")
+    end
+}
+
 -- ====== 快速攻擊 ======
 Scripts["快速攻擊"] = {
     Enabled = false,
@@ -159,117 +197,157 @@ Scripts["飛行 GUI"] = {
     end
 }
 
--- ====== 自動按 T ======
-Scripts["自動v3"] = {
-    Enabled = false,
-    Func = function(self)
-        local VirtualInputManager = game:GetService("VirtualInputManager")
+-- ====== 主界面 ======
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "BruceHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
 
-        -- 防止重複執行
-        if self._conn then return end
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 300, 0, 400)
+Main.Position = UDim2.new(0.5, 0, 0.5, 0)
+Main.AnchorPoint = Vector2.new(0.5,0.5)
+Main.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Main.BorderSizePixel = 0
+Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,14)
 
-        self._conn = task.spawn(function()
-            while self.Enabled do
-                -- 按下 T
-                VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.T, false, game)
-                task.wait(0.01)
-                -- 放開 T
-                VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.T, false, game)
+-- ====== 標題欄 ======
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1,0,0,40)
+TopBar.BackgroundTransparency = 1
+TopBar.Parent = Main
 
-                task.wait(0.5) -- ⭐ 按 T 間隔（可調，0.05~0.15 最穩）
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-50,1,0)
+Title.Position = UDim2.new(0,10,0,0)
+Title.BackgroundTransparency = 1
+Title.Text = "Bruce_hub"
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+
+-- ====== 最小化按鈕 ======
+local Minimize = Instance.new("TextButton")
+Minimize.Size = UDim2.new(0,32,0,32)
+Minimize.Position = UDim2.new(1,-38,0,4)
+Minimize.BackgroundColor3 = Color3.fromRGB(180,60,60)
+Minimize.Text = "—"
+Minimize.TextColor3 = Color3.fromRGB(255,255,255)
+Minimize.Font = Enum.Font.GothamBold
+Minimize.TextSize = 18
+Minimize.Parent = TopBar
+Instance.new("UICorner", Minimize).CornerRadius = UDim.new(0,8)
+
+-- ====== 內容區 ======
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, 0, 1, -40)
+Content.Position = UDim2.new(0,0,0,40)
+Content.BackgroundTransparency = 1
+Content.Parent = Main
+
+-- ====== 按鈕生成 ======
+local function createScriptButtons()
+    local padding = 8
+    local y = padding
+    for name,data in pairs(Scripts) do
+        local Button = Instance.new("TextButton")
+        Button.Size = UDim2.new(1,-20,0,40)
+        Button.Position = UDim2.new(0,10,0,y)
+        Button.BackgroundColor3 = Color3.fromRGB(70,70,70)
+        Button.TextColor3 = Color3.fromRGB(255,255,255)
+        Button.Text = name.." ❌"
+        Button.Font = Enum.Font.GothamBold
+        Button.TextScaled = true
+        Button.Parent = Content
+        Instance.new("UICorner", Button).CornerRadius = UDim.new(0,8)
+
+        Button.MouseEnter:Connect(function()
+            TweenService:Create(Button, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(90,90,90) }):Play()
+        end)
+        Button.MouseLeave:Connect(function()
+            TweenService:Create(Button, TweenInfo.new(0.15), { BackgroundColor3 = data.Enabled and Color3.fromRGB(0,200,0) or Color3.fromRGB(70,70,70) }):Play()
+        end)
+
+        Button.MouseButton1Click:Connect(function()
+            data.Enabled = not data.Enabled
+            if data.Enabled then
+                Button.BackgroundColor3 = Color3.fromRGB(0,200,0)
+                Button.Text = name.." ✔️"
+                data:Func()
+            else
+                Button.BackgroundColor3 = Color3.fromRGB(70,70,70)
+                Button.Text = name.." ❌"
+                if data.StopFunc then data:StopFunc() end
             end
         end)
 
-        print("✅ 自動按 T 已開啟")
-    end,
-
-    StopFunc = function(self)
-        self.Enabled = false
-        self._conn = nil
-        print("❌ 自動按 T 已關閉")
+        y = y + 48
     end
-}
+end
+createScriptButtons()
 
--- ====== 布魯斯最愛的自瞄 ======
-Scripts["布魯斯最愛的自瞄"] = {
-    Enabled=false,
-    Func=function(self)
-        local success,err=pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/自瞄%203"))() 
-        end)
-        if not success then warn("自瞄執行失敗:",err) end
-    end,
-    StopFunc=function(self)
-        warn("自瞄 無法自動關閉，請手動關閉")
+-- ====== 最小化功能 ======
+local minimized = false
+local fullSize = Main.Size
+local minSize = UDim2.new(0,300,0,40)
+
+local function updateMinimizeState()
+    Content.Visible = not minimized
+    TweenService:Create(Main, TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+        {Size = minimized and minSize or fullSize}):Play()
+    if minimized then
+        Title.TextXAlignment = Enum.TextXAlignment.Center
+        Title.Position = UDim2.new(0,0,0,0)
+    else
+        Title.TextXAlignment = Enum.TextXAlignment.Left
+        Title.Position = UDim2.new(0,10,0,0)
     end
-}
--- ====== 可拖動 GUI ======
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name="MultiScriptGUI"
-ScreenGui.Parent = PlayerGui
+end
 
-local Frame = Instance.new("Frame")
-Frame.Size=UDim2.new(0,250,0,300)
-Frame.Position=UDim2.new(0.5,-125,0.5,-150)
-Frame.BackgroundColor3=Color3.fromRGB(35,35,35)
-Frame.BorderSizePixel=0
-Frame.Parent=ScreenGui
-Instance.new("UICorner",Frame).CornerRadius = UDim.new(0,12)
+Minimize.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    updateMinimizeState()
+end)
 
-local UIListLayout=Instance.new("UIListLayout")
-UIListLayout.Padding=UDim.new(0,12)
-UIListLayout.SortOrder=Enum.SortOrder.LayoutOrder
-UIListLayout.Parent=Frame
+-- ====== 拖動 ======
+local dragging = false
+local dragStart, startPos
 
--- ====== 拖動邏輯 ======
-local dragging,dragInput,dragStart,startPos=false,nil,nil,nil
-Frame.InputBegan:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseButton1 then
-        dragging=true
-        dragStart=input.Position
-        startPos=Frame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState==Enum.UserInputState.End then dragging=false end
-        end)
+local function isDragInput(input)
+    return input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch
+end
+
+TopBar.InputBegan:Connect(function(input)
+    if isDragInput(input) then
+        dragging = true
+        dragStart = input.Position
+        startPos = Main.Position
     end
 end)
-Frame.InputChanged:Connect(function(input)
-    if input.UserInputType==Enum.UserInputType.MouseMovement then dragInput=input end
+TopBar.InputEnded:Connect(function(input)
+    if isDragInput(input) then
+        dragging = false
+    end
 end)
 UserInputService.InputChanged:Connect(function(input)
-    if input==dragInput and dragging then
-        local delta=input.Position-dragStart
-        Frame.Position=UDim2.new(
+    if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(
             startPos.X.Scale,
-            startPos.X.Offset+delta.X,
+            startPos.X.Offset + delta.X,
             startPos.Y.Scale,
-            startPos.Y.Offset+delta.Y
+            startPos.Y.Offset + delta.Y
         )
     end
 end)
 
--- ====== 按鈕生成 ======
-for name,data in pairs(Scripts) do
-    local Button=Instance.new("TextButton")
-    Button.Size=UDim2.new(1,-20,0,44)
-    Button.Text=name.." ❌"
-    Button.BackgroundColor3=Color3.fromRGB(70,70,70)
-    Button.TextColor3=Color3.fromRGB(255,255,255)
-    Button.Font=Enum.Font.GothamBold
-    Button.TextScaled=true
-    Button.Parent=Frame
-    Instance.new("UICorner",Button).CornerRadius=UDim.new(0,10)
-
-    Button.MouseButton1Click:Connect(function()
-        data.Enabled = not data.Enabled
-        if data.Enabled then
-            Button.BackgroundColor3 = Color3.fromRGB(0,200,0)
-            Button.Text = name.." ✔️"
-            data:Func()
-        else
-            Button.BackgroundColor3 = Color3.fromRGB(70,70,70)
-            Button.Text = name.." ❌"
-            if data.StopFunc then data:StopFunc() end
-        end
-    end)
-end
+-- ====== 快捷鍵 RightShift ======
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        ScreenGui.Enabled = not ScreenGui.Enabled
+    end
+end)
