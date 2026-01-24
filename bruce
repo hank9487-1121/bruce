@@ -183,20 +183,6 @@ Scripts["快速攻擊"] = {
     end
 }
 
--- ====== 自瞄 ======
-Sripts["布魯斯最愛的自瞄"] = {
-    Enabled=false,
-    Func=function(self)
-        local success,err=pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/hank9487-1121/bruce/refs/heads/main/自瞄%203"))() 
-        end)
-        if not success then warn("自瞄執行失敗:",err) end
-    end,
-    StopFunc=function(self)
-        warn("自瞄 無法自動關閉，請手動關閉")
-    end
-}
-
 -- ====== 飛行 GUI ======
 Scripts["飛行 GUI"] = {
     Enabled=false,
