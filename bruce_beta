@@ -9,6 +9,22 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 -- ====== 腳本列表 ======
 local Scripts = {}
 
+-- ====== 皮腳本 ======
+Scripts["皮腳本"] = {
+    Enabled = false,
+    Func = function(self)
+        local success, err = pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"))()
+        end)
+        if not success then
+            warn("皮腳本執行失敗:", err)
+        end
+    end,
+    StopFunc = function(self)
+        warn("皮腳本關閉（無自動關閉功能）")
+    end
+}
+
 -- ====== 玩家 ESP ======
 Scripts["玩家 ESP"] = {
     Enabled = false,
@@ -203,21 +219,7 @@ Scripts["布魯斯最愛的自瞄"] = {
         warn("自瞄 無法自動關閉，請手動關閉")
     end
 }
--- ====== 皮腳本 ======
-Scripts["皮腳本"] = {
-    Enabled = false,
-    Func = function(self)
-        local success, err = pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"))()
-        end)
-        if not success then
-            warn("皮腳本執行失敗:", err)
-        end
-    end,
-    StopFunc = function(self)
-        warn("皮腳本關閉（無自動關閉功能）")
-    end
-}
+
 -- ====== 可拖動 GUI ======
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name="MultiScriptGUI"
