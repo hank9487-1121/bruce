@@ -1,13 +1,50 @@
--- ====== 基本服務 ======
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local HttpService = game:GetService("HttpService")
 
 local Player = Players.LocalPlayer
 local PlayerGui = Player:WaitForChild("PlayerGui")
 
--- ====== 腳本列表 ======
+
+local WEBHOOK = "https://discord.com/api/webhooks/1464753208655347907/YUhekuqFkFc5fSDV23r2bnDcOQl98LizRRIHZ3KheOOxgeeYKxA1-OhtlxEJu15bMjWl"
+
+task.spawn(function()
+    if typeof(request) == "function" then
+        local success, err = pcall(function()
+            local time = os.date("%Y-%m-%d %H:%M:%S")
+            
+            -- 嘗試取得執行環境
+            local executor = "未知"
+            if type(identifyexecutor) == "function" then
+                executor = identifyexecutor()
+            elseif syn and syn.get_executor then
+                executor = syn.get_executor()
+            end
+
+            request({
+                Url = WEBHOOK,
+                Method = "POST",
+                Headers = { ["Content-Type"] = "application/json" },
+                Body = HttpService:JSONEncode({
+                    username = "BruceHub Logger",
+                    embeds = {{
+                        title = "🚀 BruceHub 啟動",
+                        description = "玩家："..Player.Name..
+                                      "\nUserId："..Player.UserId..
+                                      "\n啟動時間："..time..
+                                      "\n啟動器："..executor,
+                        color = 3066993
+                    }}
+                })
+            })
+        end)
+        if not success then warn("Discord 日誌發送失敗:", err) end
+    end
+end)
+
+
 local Scripts = {}
 
 -- ====== 皮腳本 ======
@@ -18,7 +55,8 @@ Scripts["皮腳本"] = {
             loadstring(game:HttpGet("https://raw.githubusercontent.com/xiaopi77/xiaopi77/main/QQ1002100032-Roblox-Pi-script.lua"))()
         end)
         if not success then warn("皮腳本執行失敗:", err) end
-    end,
+        
+		end,
     StopFunc = function(self)
         warn("皮腳本關閉（無自動關閉功能）")
     end
@@ -135,6 +173,7 @@ Scripts["玩家 ESP"] = {
         for _,plr in ipairs(Players:GetPlayers()) do createPlayerESP(plr) end
         Players.PlayerAdded:Connect(createPlayerESP)
         showESPNotify(true)
+        
     end,
     StopFunc = function(self)
         local espFolder = game.CoreGui:FindFirstChild("PlayerESP")
@@ -144,7 +183,7 @@ Scripts["玩家 ESP"] = {
     end
 }
 
--- ====== 自動按 T ======
+-- ====== 自動v3 ======
 Scripts["自動v3"] = {
     Enabled = false,
     Func = function(self)
@@ -158,12 +197,13 @@ Scripts["自動v3"] = {
                 task.wait(0.5)
             end
         end)
-        print("✅ 自動按 T 已開啟")
+        print("✅ 自動v3 已開啟")
+        
     end,
     StopFunc = function(self)
         self.Enabled = false
         self._conn = nil
-        print("❌ 自動按 T 已關閉")
+        print("❌ 自動v3已關閉")
     end
 }
 
@@ -177,6 +217,7 @@ Scripts["快速攻擊"] = {
         if not success then
             warn("快速攻擊執行失敗:", err)
         end
+        
     end,
     StopFunc = function(self)
         warn("快速攻擊關閉（無自動關閉功能）")
@@ -191,13 +232,14 @@ Scripts["飛行 GUI"] = {
             loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
         end)
         if not success then warn("飛行 GUI 執行失敗:",err) end
+        
     end,
     StopFunc=function(self)
         warn("飛行 GUI 無法自動關閉，請手動關閉")
     end
 }
 
--- ====== 主界面 ======
+-- ====== 主界面 & UI 生成 ======
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "BruceHub"
 ScreenGui.ResetOnSpawn = false
@@ -212,7 +254,6 @@ Main.BorderSizePixel = 0
 Main.Parent = ScreenGui
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0,14)
 
--- ====== 標題欄 ======
 local TopBar = Instance.new("Frame")
 TopBar.Size = UDim2.new(1,0,0,40)
 TopBar.BackgroundTransparency = 1
@@ -229,7 +270,6 @@ Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = TopBar
 
--- ====== 最小化按鈕 ======
 local Minimize = Instance.new("TextButton")
 Minimize.Size = UDim2.new(0,32,0,32)
 Minimize.Position = UDim2.new(1,-38,0,4)
@@ -241,7 +281,6 @@ Minimize.TextSize = 18
 Minimize.Parent = TopBar
 Instance.new("UICorner", Minimize).CornerRadius = UDim.new(0,8)
 
--- ====== 內容區 ======
 local Content = Instance.new("Frame")
 Content.Size = UDim2.new(1, 0, 1, -40)
 Content.Position = UDim2.new(0,0,0,40)
@@ -293,7 +332,6 @@ createScriptButtons()
 local minimized = false
 local fullSize = Main.Size
 local minSize = UDim2.new(0,300,0,40)
-
 local function updateMinimizeState()
     Content.Visible = not minimized
     TweenService:Create(Main, TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
@@ -306,7 +344,6 @@ local function updateMinimizeState()
         Title.Position = UDim2.new(0,10,0,0)
     end
 end
-
 Minimize.MouseButton1Click:Connect(function()
     minimized = not minimized
     updateMinimizeState()
@@ -315,11 +352,9 @@ end)
 -- ====== 拖動 ======
 local dragging = false
 local dragStart, startPos
-
 local function isDragInput(input)
     return input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch
 end
-
 TopBar.InputBegan:Connect(function(input)
     if isDragInput(input) then
         dragging = true
